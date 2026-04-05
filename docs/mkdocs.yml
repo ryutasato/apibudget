@@ -1,0 +1,45 @@
+site_name: apibudget
+site_description: Rate limiting and budget management for external APIs in Go
+site_url: https://ryutasato.github.io/apibudget/
+repo_url: https://github.com/ryutasato/apibudget
+repo_name: ryutasato/apibudget
+
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Configuration: configuration.md
+  - API Reference: api-reference.md
+  - Docker: docker.md
+  - 日本語:
+    - 概要: ja/index.md
+    - クイックスタート: ja/getting-started.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - toc:
+      permalink: true

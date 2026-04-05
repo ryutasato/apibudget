@@ -1,0 +1,29 @@
+# apibudget configuration example
+# This file defines APIs and credit pools only.
+# Server, store, and log settings are configured via environment variables.
+
+apis:
+  - name: openai
+    windows:
+      - duration: 1m
+        limit: 60
+      - duration: 1h
+        limit: 1000
+    buffer: 500ms
+
+  - name: anthropic
+    windows:
+      - duration: 1m
+        limit: 50
+
+credit_pools:
+  - name: llm-budget
+    max_credits: "100000"
+    window: 720h  # monthly reset
+    costs:
+      - api: openai
+        cost_per_call: "1.5"
+        batch_size: 1
+      - api: anthropic
+        cost_per_call: "2"
+        batch_size: 1
