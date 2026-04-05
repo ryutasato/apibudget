@@ -57,30 +57,8 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("apibudget: failed to parse YAML: %w", err)
 	}
 
-	// バリデーション: APIs
-	if len(cfg.APIs) == 0 {
-		return nil, fmt.Errorf("apibudget: config must have at least one API")
-	}
-	for i, api := range cfg.APIs {
-		if api.Name == "" {
-			return nil, fmt.Errorf("apibudget: api[%d].name is required", i)
-		}
-		if len(api.Windows) == 0 {
-			return nil, fmt.Errorf("apibudget: api[%d] (%q).windows is required", i, api.Name)
-		}
-	}
-
-	// バリデーション: CreditPools
-	for i, pool := range cfg.CreditPools {
-		if pool.Name == "" {
-			return nil, fmt.Errorf("apibudget: credit_pools[%d].name is required", i)
-		}
-		if pool.MaxCredits == "" {
-			return nil, fmt.Errorf("apibudget: credit_pools[%d] (%q).max_credits is required", i, pool.Name)
-		}
-		if len(pool.Costs) == 0 {
-			return nil, fmt.Errorf("apibudget: credit_pools[%d] (%q).costs is required", i, pool.Name)
-		}
+	if err := cfg.validate(); err != nil {
+		return nil, err
 	}
 
 	// デフォルト値の適用
@@ -96,6 +74,37 @@ func LoadConfig(path string) (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// validate はConfigのバリデーションを行う。
+func (cfg *Config) validate() error {
+	// バリデーション: APIs
+	if len(cfg.APIs) == 0 {
+		return fmt.Errorf("apibudget: config must have at least one API")
+	}
+	for i, api := range cfg.APIs {
+		if api.Name == "" {
+			return fmt.Errorf("apibudget: api[%d].name is required", i)
+		}
+		if len(api.Windows) == 0 {
+			return fmt.Errorf("apibudget: api[%d] (%q).windows is required", i, api.Name)
+		}
+	}
+
+	// バリデーション: CreditPools
+	for i, pool := range cfg.CreditPools {
+		if pool.Name == "" {
+			return fmt.Errorf("apibudget: credit_pools[%d].name is required", i)
+		}
+		if pool.MaxCredits == "" {
+			return fmt.Errorf("apibudget: credit_pools[%d] (%q).max_credits is required", i, pool.Name)
+		}
+		if len(pool.Costs) == 0 {
+			return fmt.Errorf("apibudget: credit_pools[%d] (%q).costs is required", i, pool.Name)
+		}
+	}
+
+	return nil
 }
 
 // ToManagerConfig はConfigをManagerConfigに変換する。
