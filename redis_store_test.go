@@ -26,9 +26,10 @@ func newTestRedisStore(t *testing.T) *redisStore {
 		t.Skip("Redis not available")
 	}
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
-	return store.(*redisStore)
+	res, _ := store.(*redisStore)
+	return res
 }
 
 // uniqueKey はテスト間の衝突を避けるためのユニークキーを生成する。
@@ -335,7 +336,7 @@ func TestRedisStore_WithOptions(t *testing.T) {
 	if err != nil {
 		t.Skip("Redis not available")
 	}
-	store.Close()
+	_ = store.Close()
 
 	// TLSオプション（TLS非対応のRedisでは接続失敗する）
 	_, err = NewRedisStore(redisAddr(), WithRedisTLS(true))

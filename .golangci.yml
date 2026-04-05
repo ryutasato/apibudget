@@ -18,8 +18,13 @@ linters-settings:
     check-type-assertions: true
   govet:
     enable-all: true
+    disable:
+      - fieldalignment
   misspell:
     locale: US
+    ignore-words:
+      - cancelled
+      - Cancelled
 
 issues:
   exclude-use-default: false
