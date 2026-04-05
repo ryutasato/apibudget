@@ -24,7 +24,7 @@ type Reservation struct {
 	delay        time.Duration
 	reservedCost Credit
 	confirmed    bool
-	cancelled    bool
+	canceled    bool
 	windowKeys   []windowKeyInfo // キャンセル時にカウンタを復元するための情報
 }
 
@@ -32,7 +32,7 @@ type Reservation struct {
 func (r *Reservation) OK() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.cancelled {
+	if r.canceled {
 		return false
 	}
 	return r.ok
@@ -57,10 +57,10 @@ func (r *Reservation) CancelAt(t time.Time) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.confirmed || r.cancelled || !r.ok {
+	if r.confirmed || r.canceled || !r.ok {
 		return
 	}
-	r.cancelled = true
+	r.canceled = true
 
 	ctx := context.Background()
 
@@ -88,7 +88,7 @@ func (r *Reservation) Confirm(actualCost Credit) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.confirmed || r.cancelled {
+	if r.confirmed || r.canceled {
 		return ErrReservationAlreadyFinalized
 	}
 	r.confirmed = true

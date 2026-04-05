@@ -119,10 +119,7 @@ func (c *Config) ToManagerConfig() (ManagerConfig, error) {
 			Buffer: api.Buffer,
 		}
 		for _, w := range api.Windows {
-			rc.Windows = append(rc.Windows, Window{
-				Duration: w.Duration,
-				Limit:    w.Limit,
-			})
+			rc.Windows = append(rc.Windows, Window(w))
 		}
 		mcfg.APIs = append(mcfg.APIs, rc)
 	}

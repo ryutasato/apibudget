@@ -432,7 +432,7 @@ func TestConfirmEndpoint_InvalidCost(t *testing.T) {
 	// Reserve first
 	rec := doRequest(t, handler, http.MethodPost, "/api/v1/reserve", reserveRequest{API: "test_api", N: 1})
 	var resResp reserveResponse
-	json.NewDecoder(rec.Body).Decode(&resResp)
+	_ = json.NewDecoder(rec.Body).Decode(&resResp)
 
 	// Confirm with invalid cost
 	rec = doRequest(t, handler, http.MethodPost, "/api/v1/reserve/"+resResp.ReservationID+"/confirm",

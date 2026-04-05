@@ -18,6 +18,9 @@ linters-settings:
     check-type-assertions: true
   govet:
     enable-all: true
+    disable:
+      - fieldalignment
+      - shadow
   misspell:
     locale: US
 

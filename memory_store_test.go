@@ -129,7 +129,7 @@ func TestGetWindowCount_Basic(t *testing.T) {
 	}
 
 	// After increment, returns the count
-	store.IncrementWindow(ctx, "key1", 5, 10*time.Second)
+	_, _ = store.IncrementWindow(ctx, "key1", 5, 10*time.Second)
 	count, err = store.GetWindowCount(ctx, "key1")
 	if err != nil {
 		t.Fatalf("GetWindowCount failed: %v", err)
@@ -149,7 +149,7 @@ func TestDecrementWindow_Basic(t *testing.T) {
 	}
 
 	// Increment then decrement
-	store.IncrementWindow(ctx, "key1", 10, 10*time.Second)
+	_, _ = store.IncrementWindow(ctx, "key1", 10, 10*time.Second)
 	if err := store.DecrementWindow(ctx, "key1", 3); err != nil {
 		t.Fatalf("DecrementWindow failed: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestDecrementWindow_FloorAtZero(t *testing.T) {
 	ctx := context.Background()
 	store := NewMemoryStore()
 
-	store.IncrementWindow(ctx, "key1", 2, 10*time.Second)
+	_, _ = store.IncrementWindow(ctx, "key1", 2, 10*time.Second)
 	// Decrement more than current count should floor at 0
 	if err := store.DecrementWindow(ctx, "key1", 5); err != nil {
 		t.Fatalf("DecrementWindow failed: %v", err)
@@ -179,7 +179,7 @@ func TestWindowCounter_ResetOnExpiry(t *testing.T) {
 	store := NewMemoryStore()
 
 	// Use a very short window
-	store.IncrementWindow(ctx, "key1", 5, 50*time.Millisecond)
+	_, _ = store.IncrementWindow(ctx, "key1", 5, 50*time.Millisecond)
 	count, _ := store.GetWindowCount(ctx, "key1")
 	if count != 5 {
 		t.Fatalf("expected count=5 before expiry, got %d", count)
@@ -205,7 +205,7 @@ func TestDecrementWindow_NoOpAfterExpiry(t *testing.T) {
 	ctx := context.Background()
 	store := NewMemoryStore()
 
-	store.IncrementWindow(ctx, "key1", 5, 50*time.Millisecond)
+	_, _ = store.IncrementWindow(ctx, "key1", 5, 50*time.Millisecond)
 	time.Sleep(60 * time.Millisecond)
 
 	// Decrement on expired entry is a no-op
@@ -238,7 +238,7 @@ func TestDeductCredit_Success(t *testing.T) {
 	ctx := context.Background()
 	store := NewMemoryStore()
 
-	store.SetCredit(ctx, "pool1", MustNewCredit("100"))
+	_ = store.SetCredit(ctx, "pool1", MustNewCredit("100"))
 	remaining, err := store.DeductCredit(ctx, "pool1", MustNewCredit("30"))
 	if err != nil {
 		t.Fatalf("DeductCredit failed: %v", err)
@@ -259,7 +259,7 @@ func TestDeductCredit_InsufficientBalance(t *testing.T) {
 	ctx := context.Background()
 	store := NewMemoryStore()
 
-	store.SetCredit(ctx, "pool1", MustNewCredit("10"))
+	_ = store.SetCredit(ctx, "pool1", MustNewCredit("10"))
 	_, err := store.DeductCredit(ctx, "pool1", MustNewCredit("20"))
 	if !errors.Is(err, ErrInsufficientCredits) {
 		t.Fatalf("expected ErrInsufficientCredits, got %v", err)
@@ -276,7 +276,7 @@ func TestAddCredit_Success(t *testing.T) {
 	ctx := context.Background()
 	store := NewMemoryStore()
 
-	store.SetCredit(ctx, "pool1", MustNewCredit("50"))
+	_ = store.SetCredit(ctx, "pool1", MustNewCredit("50"))
 	result, err := store.AddCredit(ctx, "pool1", MustNewCredit("25"))
 	if err != nil {
 		t.Fatalf("AddCredit failed: %v", err)
