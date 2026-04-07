@@ -1,6 +1,6 @@
 module github.com/ryutasato/apibudget
 
-go 1.22
+go 1.24.3
 
 require (
 	github.com/google/uuid v1.6.0

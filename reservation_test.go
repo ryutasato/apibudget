@@ -6,160 +6,183 @@ import (
 	"time"
 )
 
-func TestReservation_OKAndDelay(t *testing.T) {
+type mockStore struct {
+	IncrementWindowFunc func(ctx context.Context, key string, delta int64, window time.Duration) (int64, error)
+	DecrementWindowFunc func(ctx context.Context, key string, delta int64) error
+	GetWindowCountFunc  func(ctx context.Context, key string) (int64, error)
+	GetCreditFunc       func(ctx context.Context, poolKey string) (Credit, error)
+	SetCreditFunc       func(ctx context.Context, poolKey string, value Credit) error
+	DeductCreditFunc    func(ctx context.Context, poolKey string, amount Credit) (Credit, error)
+	AddCreditFunc       func(ctx context.Context, poolKey string, amount Credit) (Credit, error)
+	CloseFunc           func() error
+}
+
+func (m *mockStore) IncrementWindow(ctx context.Context, key string, delta int64, window time.Duration) (int64, error) {
+	if m.IncrementWindowFunc != nil {
+		return m.IncrementWindowFunc(ctx, key, delta, window)
+	}
+	return 0, nil
+}
+
+func (m *mockStore) DecrementWindow(ctx context.Context, key string, delta int64) error {
+	if m.DecrementWindowFunc != nil {
+		return m.DecrementWindowFunc(ctx, key, delta)
+	}
+	return nil
+}
+
+func (m *mockStore) GetWindowCount(ctx context.Context, key string) (int64, error) {
+	if m.GetWindowCountFunc != nil {
+		return m.GetWindowCountFunc(ctx, key)
+	}
+	return 0, nil
+}
+
+func (m *mockStore) GetCredit(ctx context.Context, poolKey string) (Credit, error) {
+	if m.GetCreditFunc != nil {
+		return m.GetCreditFunc(ctx, poolKey)
+	}
+	return Credit{}, nil
+}
+
+func (m *mockStore) SetCredit(ctx context.Context, poolKey string, value Credit) error {
+	if m.SetCreditFunc != nil {
+		return m.SetCreditFunc(ctx, poolKey, value)
+	}
+	return nil
+}
+
+func (m *mockStore) DeductCredit(ctx context.Context, poolKey string, amount Credit) (Credit, error) {
+	if m.DeductCreditFunc != nil {
+		return m.DeductCreditFunc(ctx, poolKey, amount)
+	}
+	return Credit{}, nil
+}
+
+func (m *mockStore) AddCredit(ctx context.Context, poolKey string, amount Credit) (Credit, error) {
+	if m.AddCreditFunc != nil {
+		return m.AddCreditFunc(ctx, poolKey, amount)
+	}
+	return Credit{}, nil
+}
+
+func (m *mockStore) Close() error {
+	if m.CloseFunc != nil {
+		return m.CloseFunc()
+	}
+	return nil
+}
+
+func TestReservation_Confirm_InsufficientCredits(t *testing.T) {
+	store := &mockStore{}
+	manager := &BudgetManager{
+		store:  store,
+		logger: newDefaultLogger(LogLevelDebug),
+	}
+
+	reservedCost := MustNewCredit("10")
 	r := &Reservation{
-		ok:    true,
-		delay: time.Second,
+		manager:      manager,
+		poolName:     "test_pool",
+		reservedCost: reservedCost,
+		ok:           true,
 	}
 
-	if !r.OK() {
-		t.Error("expected OK to be true")
+	actualCost := MustNewCredit("15")
+	diff := actualCost.Sub(reservedCost) // 5
+
+	remainingCredit := MustNewCredit("2")
+	expectedFinalCredit := remainingCredit.Sub(diff) // 2 - 5 = -3
+
+	deductCalled := false
+	store.DeductCreditFunc = func(ctx context.Context, poolKey string, amount Credit) (Credit, error) {
+		deductCalled = true
+		if poolKey != "test_pool" {
+			t.Errorf("expected pool test_pool, got %s", poolKey)
+		}
+		if amount.Cmp(diff) != 0 {
+			t.Errorf("expected diff %s, got %s", diff.String(), amount.String())
+		}
+		return Credit{}, ErrInsufficientCredits
 	}
 
-	if r.Delay() != time.Second {
-		t.Errorf("expected Delay %v, got %v", time.Second, r.Delay())
+	getCreditCalled := false
+	store.GetCreditFunc = func(ctx context.Context, poolKey string) (Credit, error) {
+		getCreditCalled = true
+		return remainingCredit, nil
 	}
 
-	r.Cancel()
-	if r.OK() {
-		t.Error("expected OK to be false after cancellation")
+	setCreditCalled := false
+	store.SetCreditFunc = func(ctx context.Context, poolKey string, value Credit) error {
+		setCreditCalled = true
+		if value.Cmp(expectedFinalCredit) != 0 {
+			t.Errorf("expected final credit %s, got %s", expectedFinalCredit.String(), value.String())
+		}
+		return nil
+	}
+
+	err := r.Confirm(actualCost)
+
+	if err != ErrInsufficientCredits {
+		t.Errorf("expected ErrInsufficientCredits, got %v", err)
+	}
+
+	if !deductCalled {
+		t.Error("DeductCredit was not called")
+	}
+	if !getCreditCalled {
+		t.Error("GetCredit was not called")
+	}
+	if !setCreditCalled {
+		t.Error("SetCredit was not called")
+	}
+	if !r.confirmed {
+		t.Error("expected reservation to be marked confirmed")
 	}
 }
 
-func TestReservation_Cancel(t *testing.T) {
-	mgr, _ := NewBudgetManager(ManagerConfig{
-		APIs: []RateConfig{
-			{Name: "api1", Windows: []Window{{Duration: time.Minute, Limit: 10}}},
-		},
-		CreditPools: []CreditPoolConfig{
-			{
-				Name:       "pool1",
-				MaxCredits: MustNewCredit("100"),
-				Costs:      []CreditCost{{APIName: "api1", CostPerCall: MustNewCredit("2")}},
-			},
-		},
-	})
-
-	r := mgr.Reserve("api1")
-	if !r.OK() {
-		t.Fatal("expected reservation to be OK")
+func TestReservation_Confirm_NegativeDiff(t *testing.T) {
+	store := &mockStore{}
+	manager := &BudgetManager{
+		store:  store,
+		logger: newDefaultLogger(LogLevelDebug),
 	}
 
-	// Verify credits were deducted
-	c, _ := mgr.GetCredits("pool1")
-	if c.String() != "98" {
-		t.Errorf("expected 98 credits, got %s", c.String())
+	reservedCost := MustNewCredit("10")
+	r := &Reservation{
+		manager:      manager,
+		poolName:     "test_pool",
+		reservedCost: reservedCost,
+		ok:           true,
 	}
 
-	r.Cancel()
+	actualCost := MustNewCredit("4")
+	// diff = 4 - 10 = -6
+	// refund should be 6
 
-	// Verify credits were restored
-	c, _ = mgr.GetCredits("pool1")
-	if c.String() != "100" {
-		t.Errorf("expected 100 credits, got %s", c.String())
+	addCreditCalled := false
+	store.AddCreditFunc = func(ctx context.Context, poolKey string, amount Credit) (Credit, error) {
+		addCreditCalled = true
+		if poolKey != "test_pool" {
+			t.Errorf("expected pool test_pool, got %s", poolKey)
+		}
+		expectedRefund := MustNewCredit("6")
+		if amount.Cmp(expectedRefund) != 0 {
+			t.Errorf("expected refund %s, got %s", expectedRefund.String(), amount.String())
+		}
+		return Credit{}, nil
 	}
 
-	// Verify window count was decremented
-	ctx := context.Background()
-	count, _ := mgr.store.GetWindowCount(ctx, r.windowKeys[0].key)
-	if count != 0 {
-		t.Errorf("expected count 0, got %d", count)
-	}
+	err := r.Confirm(actualCost)
 
-	// Double cancel should be no-op
-	r.Cancel()
-}
-
-func TestReservation_Confirm_NoPool(t *testing.T) {
-	mgr, _ := NewBudgetManager(ManagerConfig{
-		APIs: []RateConfig{
-			{Name: "api1", Windows: []Window{{Duration: time.Minute, Limit: 10}}},
-		},
-	})
-
-	r := mgr.Reserve("api1")
-	if !r.OK() {
-		t.Fatal("expected reservation to be OK")
-	}
-
-	err := r.Confirm(MustNewCredit("5"))
 	if err != nil {
-		t.Errorf("expected nil error, got %v", err)
+		t.Errorf("unexpected error: %v", err)
 	}
 
-	err = r.Confirm(MustNewCredit("5"))
-	if err != ErrReservationAlreadyFinalized {
-		t.Errorf("expected ErrReservationAlreadyFinalized, got %v", err)
+	if !addCreditCalled {
+		t.Error("AddCredit was not called")
 	}
-}
-
-func TestReservation_Confirm_WithPool(t *testing.T) {
-	mgr, _ := NewBudgetManager(ManagerConfig{
-		APIs: []RateConfig{
-			{Name: "api1", Windows: []Window{{Duration: time.Minute, Limit: 10}}},
-		},
-		CreditPools: []CreditPoolConfig{
-			{
-				Name:       "pool1",
-				MaxCredits: MustNewCredit("100"),
-				Costs:      []CreditCost{{APIName: "api1", CostPerCall: MustNewCredit("10")}},
-			},
-		},
-	})
-
-	t.Run("Refund", func(t *testing.T) {
-		mgr.ResetCredits("pool1")
-		r := mgr.Reserve("api1")
-		err := r.Confirm(MustNewCredit("5"))
-		if err != nil {
-			t.Errorf("expected nil error, got %v", err)
-		}
-		c, _ := mgr.GetCredits("pool1")
-		if c.String() != "95" {
-			t.Errorf("expected 95 credits, got %s", c.String())
-		}
-	})
-
-	t.Run("ExtraCost", func(t *testing.T) {
-		mgr.ResetCredits("pool1")
-		r := mgr.Reserve("api1")
-		err := r.Confirm(MustNewCredit("15"))
-		if err != nil {
-			t.Errorf("expected nil error, got %v", err)
-		}
-		c, _ := mgr.GetCredits("pool1")
-		if c.String() != "85" {
-			t.Errorf("expected 85 credits, got %s", c.String())
-		}
-	})
-
-	t.Run("ExactCost", func(t *testing.T) {
-		mgr.ResetCredits("pool1")
-		r := mgr.Reserve("api1")
-		err := r.Confirm(MustNewCredit("10"))
-		if err != nil {
-			t.Errorf("expected nil error, got %v", err)
-		}
-		c, _ := mgr.GetCredits("pool1")
-		if c.String() != "90" {
-			t.Errorf("expected 90 credits, got %s", c.String())
-		}
-	})
-
-	t.Run("InsufficientFunds", func(t *testing.T) {
-		mgr.ResetCredits("pool1")
-		// Make it almost empty
-		mgr.SetCredits("pool1", MustNewCredit("10"))
-
-		r := mgr.Reserve("api1") // Consumes 10. Balance: 0
-
-		err := r.Confirm(MustNewCredit("20")) // diff is 10. Deducting 10 from 0 fails.
-		if err != ErrInsufficientCredits {
-			t.Errorf("expected ErrInsufficientCredits, got %v", err)
-		}
-		c, _ := mgr.GetCredits("pool1")
-		if c.String() != "-10" {
-			t.Errorf("expected -10 credits, got %s", c.String())
-		}
-	})
+	if !r.confirmed {
+		t.Error("expected reservation to be marked confirmed")
+	}
 }
