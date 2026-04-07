@@ -9,15 +9,15 @@ import (
 
 // counterEntry はウィンドウカウンタのエントリ。
 type counterEntry struct {
-	count   int64
 	expires time.Time
+	count   int64
 }
 
 // memoryStore はsync.Mutexベースのインメモリストア実装。
 type memoryStore struct {
-	mu       sync.Mutex
 	counters map[string]*counterEntry
 	credits  map[string]*big.Rat
+	mu       sync.Mutex
 }
 
 // NewMemoryStore はインメモリストアを生成する。

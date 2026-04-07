@@ -254,9 +254,9 @@ func TestConcurrency_ReservationConfirmCancel(t *testing.T) {
 		// Goroutine 1: Confirm
 		go func() {
 			defer wg.Done()
-			err := r.Confirm(MustNewCredit("1"))
-			if err != nil {
-				confirmErr.Store(err)
+			cerr := r.Confirm(MustNewCredit("1"))
+			if cerr != nil {
+				confirmErr.Store(cerr)
 			}
 		}()
 

@@ -51,7 +51,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to create Redis store: %v", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		opts = append(opts, apibudget.WithStore(store))
 	case "memory":
 		// default, no action needed

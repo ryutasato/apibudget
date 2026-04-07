@@ -154,16 +154,16 @@ func TestPropertyLogLevelFiltering(t *testing.T) {
 	// logMethods maps each LogLevel (Debug=0..Error=3) to the corresponding
 	// Logger method and a unique marker string.
 	type logCall struct {
-		level  LogLevel
 		method func(Logger, string)
 		marker string
+		level  LogLevel
 	}
 
 	calls := []logCall{
-		{LogLevelDebug, func(l Logger, m string) { l.Debug(m) }, "dbg_marker"},
-		{LogLevelInfo, func(l Logger, m string) { l.Info(m) }, "inf_marker"},
-		{LogLevelWarn, func(l Logger, m string) { l.Warn(m) }, "wrn_marker"},
-		{LogLevelError, func(l Logger, m string) { l.Error(m) }, "err_marker"},
+		{func(l Logger, m string) { l.Debug(m) }, "dbg_marker", LogLevelDebug},
+		{func(l Logger, m string) { l.Info(m) }, "inf_marker", LogLevelInfo},
+		{func(l Logger, m string) { l.Warn(m) }, "wrn_marker", LogLevelWarn},
+		{func(l Logger, m string) { l.Error(m) }, "err_marker", LogLevelError},
 	}
 
 	f := func(levelRaw uint8) bool {

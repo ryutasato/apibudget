@@ -222,8 +222,8 @@ func TestReserveAndCancelEndpoint(t *testing.T) {
 	if err := json.NewDecoder(rec.Body).Decode(&cancelResp); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}
-	if !cancelResp.Cancelled {
-		t.Error("expected cancelled to be true")
+	if !cancelResp.Canceled {
+		t.Error("expected canceled to be true")
 	}
 }
 
@@ -432,7 +432,7 @@ func TestConfirmEndpoint_InvalidCost(t *testing.T) {
 	// Reserve first
 	rec := doRequest(t, handler, http.MethodPost, "/api/v1/reserve", reserveRequest{API: "test_api", N: 1})
 	var resResp reserveResponse
-	json.NewDecoder(rec.Body).Decode(&resResp)
+	_ = json.NewDecoder(rec.Body).Decode(&resResp)
 
 	// Confirm with invalid cost
 	rec = doRequest(t, handler, http.MethodPost, "/api/v1/reserve/"+resResp.ReservationID+"/confirm",

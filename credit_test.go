@@ -217,16 +217,16 @@ func TestNewCreditFromInt(t *testing.T) {
 // **Validates: Requirements 1.3**
 func TestCredit_IsZero(t *testing.T) {
 	tests := []struct {
-		name string
 		val  Credit
+		name string
 		want bool
 	}{
-		{"zero from string", MustNewCredit("0"), true},
-		{"zero from int", NewCreditFromInt(0), true},
-		{"zero value struct", Credit{}, true},
-		{"positive", MustNewCredit("1"), false},
-		{"negative", MustNewCredit("-1"), false},
-		{"small fraction", MustNewCredit("1/1000000"), false},
+		{MustNewCredit("0"), "zero from string", true},
+		{NewCreditFromInt(0), "zero from int", true},
+		{Credit{}, "zero value struct", true},
+		{MustNewCredit("1"), "positive", false},
+		{MustNewCredit("-1"), "negative", false},
+		{MustNewCredit("1/1000000"), "small fraction", false},
 	}
 
 	for _, tt := range tests {
@@ -242,15 +242,15 @@ func TestCredit_IsZero(t *testing.T) {
 // **Validates: Requirements 1.3**
 func TestCredit_IsNegative(t *testing.T) {
 	tests := []struct {
-		name string
 		val  Credit
+		name string
 		want bool
 	}{
-		{"negative", MustNewCredit("-1"), true},
-		{"negative fraction", MustNewCredit("-1/3"), true},
-		{"zero", MustNewCredit("0"), false},
-		{"positive", MustNewCredit("1"), false},
-		{"zero value struct", Credit{}, false},
+		{MustNewCredit("-1"), "negative", true},
+		{MustNewCredit("-1/3"), "negative fraction", true},
+		{MustNewCredit("0"), "zero", false},
+		{MustNewCredit("1"), "positive", false},
+		{Credit{}, "zero value struct", false},
 	}
 
 	for _, tt := range tests {
@@ -266,15 +266,15 @@ func TestCredit_IsNegative(t *testing.T) {
 // **Validates: Requirements 1.3**
 func TestCredit_Float64(t *testing.T) {
 	tests := []struct {
-		name    string
 		val     Credit
+		name    string
 		wantF64 float64
 	}{
-		{"integer", MustNewCredit("42"), 42.0},
-		{"decimal", MustNewCredit("3.14"), 3.14},
-		{"zero", MustNewCredit("0"), 0.0},
-		{"negative", MustNewCredit("-2.5"), -2.5},
-		{"zero value struct", Credit{}, 0.0},
+		{MustNewCredit("42"), "integer", 42.0},
+		{MustNewCredit("3.14"), "decimal", 3.14},
+		{MustNewCredit("0"), "zero", 0.0},
+		{MustNewCredit("-2.5"), "negative", -2.5},
+		{Credit{}, "zero value struct", 0.0},
 	}
 
 	for _, tt := range tests {
