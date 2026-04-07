@@ -30,11 +30,11 @@ type WindowConfig struct {
 
 // CreditPoolYAML はYAML内のクレジットプール設定。
 type CreditPoolYAML struct {
+	Initial    *string          `yaml:"initial"`
 	Name       string           `yaml:"name"`
 	MaxCredits string           `yaml:"max_credits"`
-	Window     time.Duration    `yaml:"window"`
-	Initial    *string          `yaml:"initial"`
 	Costs      []CreditCostYAML `yaml:"costs"`
+	Window     time.Duration    `yaml:"window"`
 }
 
 // CreditCostYAML はYAML内のクレジット消費ルール。

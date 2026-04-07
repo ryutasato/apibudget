@@ -15,17 +15,17 @@ type windowKeyInfo struct {
 // Reservation はレート枠とクレジットの予約を表す。
 // Reserve/ReserveNで生成され、Confirm/Cancelで確定する。
 type Reservation struct {
-	mu           sync.Mutex
 	manager      *BudgetManager
+	reservedCost Credit
 	apiName      string
 	poolName     string
+	windowKeys   []windowKeyInfo
 	n            int64
-	ok           bool
 	delay        time.Duration
-	reservedCost Credit
+	mu           sync.Mutex
+	ok           bool
 	confirmed    bool
 	canceled     bool
-	windowKeys   []windowKeyInfo // キャンセル時にカウンタを復元するための情報
 }
 
 // OK は予約が有効かどうかを返す。

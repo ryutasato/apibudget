@@ -47,8 +47,8 @@ func TestDeductCreditAtomicity(t *testing.T) {
 		poolKey := "test-pool"
 
 		// Set initial balance
-		if err := store.SetCredit(ctx, poolKey, initial); err != nil {
-			t.Logf("SetCredit failed: %v", err)
+		if setErr := store.SetCredit(ctx, poolKey, initial); setErr != nil {
+			t.Logf("SetCredit failed: %v", setErr)
 			return false
 		}
 
