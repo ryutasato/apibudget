@@ -108,7 +108,7 @@ type confirmResponse struct {
 }
 
 type cancelResponse struct {
-	Cancelled bool `json:"cancelled"`
+	Canceled bool `json:"cancelled"`
 }
 
 type waitRequest struct {
@@ -294,7 +294,7 @@ func (s *Server) handleCancel(w http.ResponseWriter, r *http.Request, id string)
 
 	reservation.Cancel()
 
-	writeJSON(w, http.StatusOK, cancelResponse{Cancelled: true})
+	writeJSON(w, http.StatusOK, cancelResponse{Canceled: true})
 }
 
 func (s *Server) handleWait(w http.ResponseWriter, r *http.Request) {

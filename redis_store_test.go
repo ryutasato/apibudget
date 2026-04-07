@@ -26,7 +26,7 @@ func newTestRedisStore(t *testing.T) *redisStore {
 		t.Skip("Redis not available")
 	}
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 	return store.(*redisStore)
 }

@@ -222,8 +222,8 @@ func TestReserveAndCancelEndpoint(t *testing.T) {
 	if err := json.NewDecoder(rec.Body).Decode(&cancelResp); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}
-	if !cancelResp.Cancelled {
-		t.Error("expected cancelled to be true")
+	if !cancelResp.Canceled {
+		t.Error("expected canceled to be true")
 	}
 }
 
