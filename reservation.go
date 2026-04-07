@@ -24,7 +24,7 @@ type Reservation struct {
 	delay        time.Duration
 	reservedCost Credit
 	confirmed    bool
-	canceled    bool
+	canceled     bool
 	windowKeys   []windowKeyInfo // キャンセル時にカウンタを復元するための情報
 }
 

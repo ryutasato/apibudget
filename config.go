@@ -114,68 +114,53 @@ func (c *Config) ToManagerConfig() (ManagerConfig, error) {
 
 	// APIs変換
 	for _, api := range c.APIs {
-		mcfg.APIs = append(mcfg.APIs, api.toRateConfig())
+		rc := RateConfig{
+			Name:   api.Name,
+			Buffer: api.Buffer,
+		}
+		for _, w := range api.Windows {
+			rc.Windows = append(rc.Windows, Window(w))
+		}
+		mcfg.APIs = append(mcfg.APIs, rc)
 	}
 
 	// CreditPools変換
 	for _, pool := range c.CreditPools {
-		pc, err := pool.toCreditPoolConfig()
+		maxCredits, err := NewCredit(pool.MaxCredits)
 		if err != nil {
-			return ManagerConfig{}, err
+			return ManagerConfig{}, fmt.Errorf("apibudget: invalid max_credits %q for pool %q: %w", pool.MaxCredits, pool.Name, err)
 		}
+
+		pc := CreditPoolConfig{
+			Name:       pool.Name,
+			MaxCredits: maxCredits,
+			Window:     pool.Window,
+		}
+
+		if pool.Initial != nil {
+			initial, err := NewCredit(*pool.Initial)
+			if err != nil {
+				return ManagerConfig{}, fmt.Errorf("apibudget: invalid initial %q for pool %q: %w", *pool.Initial, pool.Name, err)
+			}
+			pc.Initial = &initial
+		}
+
+		for _, cost := range pool.Costs {
+			costPerCall, err := NewCredit(cost.CostPerCall)
+			if err != nil {
+				return ManagerConfig{}, fmt.Errorf("apibudget: invalid cost_per_call %q for api %q in pool %q: %w", cost.CostPerCall, cost.API, pool.Name, err)
+			}
+			pc.Costs = append(pc.Costs, CreditCost{
+				APIName:     cost.API,
+				CostPerCall: costPerCall,
+				BatchSize:   cost.BatchSize,
+			})
+		}
+
 		mcfg.CreditPools = append(mcfg.CreditPools, pc)
 	}
 
 	return mcfg, nil
-}
-
-func (api APIConfig) toRateConfig() RateConfig {
-	rc := RateConfig{
-		Name:   api.Name,
-		Buffer: api.Buffer,
-	}
-	for _, w := range api.Windows {
-		rc.Windows = append(rc.Windows, Window{
-			Duration: w.Duration,
-			Limit:    w.Limit,
-		})
-	}
-	return rc
-}
-
-func (pool CreditPoolYAML) toCreditPoolConfig() (CreditPoolConfig, error) {
-	maxCredits, err := NewCredit(pool.MaxCredits)
-	if err != nil {
-		return CreditPoolConfig{}, fmt.Errorf("apibudget: invalid max_credits %q for pool %q: %w", pool.MaxCredits, pool.Name, err)
-	}
-
-	pc := CreditPoolConfig{
-		Name:       pool.Name,
-		MaxCredits: maxCredits,
-		Window:     pool.Window,
-	}
-
-	if pool.Initial != nil {
-		initial, err := NewCredit(*pool.Initial)
-		if err != nil {
-			return CreditPoolConfig{}, fmt.Errorf("apibudget: invalid initial %q for pool %q: %w", *pool.Initial, pool.Name, err)
-		}
-		pc.Initial = &initial
-	}
-
-	for _, cost := range pool.Costs {
-		costPerCall, err := NewCredit(cost.CostPerCall)
-		if err != nil {
-			return CreditPoolConfig{}, fmt.Errorf("apibudget: invalid cost_per_call %q for api %q in pool %q: %w", cost.CostPerCall, cost.API, pool.Name, err)
-		}
-		pc.Costs = append(pc.Costs, CreditCost{
-			APIName:     cost.API,
-			CostPerCall: costPerCall,
-			BatchSize:   cost.BatchSize,
-		})
-	}
-
-	return pc, nil
 }
 
 // ManagerOption はBudgetManagerの追加設定オプション。

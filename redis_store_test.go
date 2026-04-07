@@ -28,7 +28,8 @@ func newTestRedisStore(t *testing.T) *redisStore {
 	t.Cleanup(func() {
 		_ = store.Close()
 	})
-	return store.(*redisStore)
+	s, _ := store.(*redisStore)
+	return s
 }
 
 // uniqueKey はテスト間の衝突を避けるためのユニークキーを生成する。
