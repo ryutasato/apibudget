@@ -69,26 +69,26 @@ type RateConfig struct {
 
 // CreditCost は特定APIのクレジット消費ルールを定義する。
 type CreditCost struct {
-	APIName     string // 必須: 対象API名
 	CostPerCall Credit // オプション（デフォルト: "1"）。1回あたりのクレジット消費量
+	APIName     string // 必須: 対象API名
 	BatchSize   int64  // オプション（デフォルト: 1）。N回ごとに消費する場合のN
 }
 
 // CreditPoolConfig は共通クレジットプールの設定。
 type CreditPoolConfig struct {
+	Initial    *Credit       // プログラム開始時の残りクレジット（nilならMaxCredits）
 	Name       string        // 必須: プール名
 	MaxCredits Credit        // プールの上限
-	Window     time.Duration // リセット周期（0なら手動リセットのみ）
 	Costs      []CreditCost  // 各APIの消費ルール
-	Initial    *Credit       // プログラム開始時の残りクレジット（nilならMaxCredits）
+	Window     time.Duration // リセット周期（0なら手動リセットのみ）
 }
 
 // ManagerConfig はBudgetManagerの全体設定。
 type ManagerConfig struct {
-	APIs        []RateConfig       // APIごとのレート制限設定
-	CreditPools []CreditPoolConfig // クレジットプール設定
 	Store       Store              // nilならNewMemoryStore()
 	Logger      Logger             // nilならslog.Default()ベースのLogger
+	APIs        []RateConfig       // APIごとのレート制限設定
+	CreditPools []CreditPoolConfig // クレジットプール設定
 	LogLevel    LogLevel           // デフォルト: LogLevelInfo
 }
 
@@ -100,14 +100,14 @@ type creditPoolInfo struct {
 
 // BudgetManager は複数APIのレート制限とクレジット管理を統合する。
 type BudgetManager struct {
-	mu            sync.Mutex
-	cfg           ManagerConfig
 	store         Store
 	logger        Logger
 	apis          map[string]*RateConfig       // API名 → RateConfig
 	pools         map[string]*CreditPoolConfig // プール名 → CreditPoolConfig
 	apiToPool     map[string]*creditPoolInfo   // API名 → クレジットプール情報
 	batchCounters map[string]int64             // API名 → バッチ消費用の累計リクエスト数
+	cfg           ManagerConfig
+	mu            sync.Mutex
 }
 
 // NewBudgetManager は設定からBudgetManagerを生成する。

@@ -30,11 +30,11 @@ type WindowConfig struct {
 
 // CreditPoolYAML はYAML内のクレジットプール設定。
 type CreditPoolYAML struct {
+	Initial    *string          `yaml:"initial"`
 	Name       string           `yaml:"name"`
 	MaxCredits string           `yaml:"max_credits"`
-	Window     time.Duration    `yaml:"window"`
-	Initial    *string          `yaml:"initial"`
 	Costs      []CreditCostYAML `yaml:"costs"`
+	Window     time.Duration    `yaml:"window"`
 }
 
 // CreditCostYAML はYAML内のクレジット消費ルール。
@@ -110,10 +110,7 @@ func (c *Config) ToManagerConfig() (ManagerConfig, error) {
 			Buffer: api.Buffer,
 		}
 		for _, w := range api.Windows {
-			rc.Windows = append(rc.Windows, Window{
-				Duration: w.Duration,
-				Limit:    w.Limit,
-			})
+			rc.Windows = append(rc.Windows, Window(w))
 		}
 		mcfg.APIs = append(mcfg.APIs, rc)
 	}

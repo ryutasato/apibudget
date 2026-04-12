@@ -85,7 +85,7 @@ func TestNewBudgetManager_InitialCreditDefault(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	credit, err := m.store.GetCredit(nil, "pool1")
+	credit, err := m.store.GetCredit(context.TODO(), "pool1")
 	if err != nil {
 		t.Fatalf("unexpected error getting credit: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestNewBudgetManager_InitialCreditExplicit(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	credit, err := m.store.GetCredit(nil, "pool1")
+	credit, err := m.store.GetCredit(context.TODO(), "pool1")
 	if err != nil {
 		t.Fatalf("unexpected error getting credit: %v", err)
 	}
@@ -275,11 +275,11 @@ func TestNewBudgetManager_MultiplePoolsAndAPIs(t *testing.T) {
 	}
 
 	// Verify initial credits
-	creditA, _ := m.store.GetCredit(nil, "pool_a")
+	creditA, _ := m.store.GetCredit(context.TODO(), "pool_a")
 	if creditA.Cmp(MustNewCredit("1000")) != 0 {
 		t.Errorf("expected pool_a initial=1000, got %s", creditA.String())
 	}
-	creditB, _ := m.store.GetCredit(nil, "pool_b")
+	creditB, _ := m.store.GetCredit(context.TODO(), "pool_b")
 	if creditB.Cmp(MustNewCredit("500")) != 0 {
 		t.Errorf("expected pool_b initial=500, got %s", creditB.String())
 	}
@@ -432,7 +432,7 @@ func TestAllowN_NoStateChangeOnFailure(t *testing.T) {
 	m.AllowN("api1", 1, now)
 
 	// Get credit before failed attempt
-	creditBefore, _ := m.store.GetCredit(nil, "pool1")
+	creditBefore, _ := m.store.GetCredit(context.TODO(), "pool1")
 
 	// This should fail (limit exceeded)
 	allowed, _ := m.AllowN("api1", 1, now)
@@ -441,7 +441,7 @@ func TestAllowN_NoStateChangeOnFailure(t *testing.T) {
 	}
 
 	// Credit should be unchanged
-	creditAfter, _ := m.store.GetCredit(nil, "pool1")
+	creditAfter, _ := m.store.GetCredit(context.TODO(), "pool1")
 	if creditBefore.Cmp(creditAfter) != 0 {
 		t.Errorf("expected credit unchanged on failure, before=%s, after=%s",
 			creditBefore.String(), creditAfter.String())
@@ -474,7 +474,7 @@ func TestAllowN_CreditDeduction(t *testing.T) {
 	if !allowed {
 		t.Fatal("expected allowed=true")
 	}
-	credit, _ := m.store.GetCredit(nil, "pool1")
+	credit, _ := m.store.GetCredit(context.TODO(), "pool1")
 	if credit.Cmp(MustNewCredit("7")) != 0 {
 		t.Errorf("expected credit=7, got %s", credit.String())
 	}
@@ -484,7 +484,7 @@ func TestAllowN_CreditDeduction(t *testing.T) {
 	if !allowed {
 		t.Fatal("expected allowed=true")
 	}
-	credit, _ = m.store.GetCredit(nil, "pool1")
+	credit, _ = m.store.GetCredit(context.TODO(), "pool1")
 	if credit.Cmp(MustNewCredit("4")) != 0 {
 		t.Errorf("expected credit=4, got %s", credit.String())
 	}
@@ -494,7 +494,7 @@ func TestAllowN_CreditDeduction(t *testing.T) {
 	if !allowed {
 		t.Fatal("expected allowed=true")
 	}
-	credit, _ = m.store.GetCredit(nil, "pool1")
+	credit, _ = m.store.GetCredit(context.TODO(), "pool1")
 	if credit.Cmp(MustNewCredit("1")) != 0 {
 		t.Errorf("expected credit=1, got %s", credit.String())
 	}
@@ -506,7 +506,7 @@ func TestAllowN_CreditDeduction(t *testing.T) {
 	}
 
 	// Credit should remain at 1 (no change on failure)
-	credit, _ = m.store.GetCredit(nil, "pool1")
+	credit, _ = m.store.GetCredit(context.TODO(), "pool1")
 	if credit.Cmp(MustNewCredit("1")) != 0 {
 		t.Errorf("expected credit=1 after failed deduction, got %s", credit.String())
 	}
@@ -629,7 +629,7 @@ func TestAllowN_CreditInsufficientNoCounterChange(t *testing.T) {
 
 	// Get window count before failed attempt
 	key := windowKey("api1", time.Minute, now)
-	countBefore, _ := m.store.GetWindowCount(nil, key)
+	countBefore, _ := m.store.GetWindowCount(context.TODO(), key)
 
 	// This should fail (credits exhausted)
 	allowed, _ := m.AllowN("api1", 1, now)
@@ -638,7 +638,7 @@ func TestAllowN_CreditInsufficientNoCounterChange(t *testing.T) {
 	}
 
 	// Window counter should not have changed
-	countAfter, _ := m.store.GetWindowCount(nil, key)
+	countAfter, _ := m.store.GetWindowCount(context.TODO(), key)
 	if countBefore != countAfter {
 		t.Errorf("expected counter unchanged on credit failure, before=%d, after=%d",
 			countBefore, countAfter)
@@ -726,8 +726,8 @@ func TestProperty4_AllowFailureStateInvariance(t *testing.T) {
 
 		// Capture state before the failing call
 		key := windowKey("prop4_api", time.Minute, now)
-		countBefore, _ := m.store.GetWindowCount(nil, key)
-		creditBefore, _ := m.store.GetCredit(nil, "prop4_pool")
+		countBefore, _ := m.store.GetWindowCount(context.TODO(), key)
+		creditBefore, _ := m.store.GetCredit(context.TODO(), "prop4_pool")
 
 		// This call should fail
 		allowed, _ := m.AllowN("prop4_api", 1, now)
@@ -737,8 +737,8 @@ func TestProperty4_AllowFailureStateInvariance(t *testing.T) {
 		}
 
 		// Verify state unchanged
-		countAfter, _ := m.store.GetWindowCount(nil, key)
-		creditAfter, _ := m.store.GetCredit(nil, "prop4_pool")
+		countAfter, _ := m.store.GetWindowCount(context.TODO(), key)
+		creditAfter, _ := m.store.GetCredit(context.TODO(), "prop4_pool")
 
 		return countBefore == countAfter && creditBefore.Cmp(creditAfter) == 0
 	}
@@ -976,7 +976,7 @@ func TestAllowN_BatchConsumption_BatchSize1(t *testing.T) {
 		t.Error("expected allowed=false when credits exhausted")
 	}
 
-	credit, _ := m.store.GetCredit(nil, "pool1")
+	credit, _ := m.store.GetCredit(context.TODO(), "pool1")
 	if !credit.IsZero() {
 		t.Errorf("expected credit=0, got %s", credit.String())
 	}
@@ -1009,7 +1009,7 @@ func TestAllowN_BatchConsumption_BatchSize5(t *testing.T) {
 	if !allowed {
 		t.Fatal("expected allowed=true on call 1")
 	}
-	credit, _ := m.store.GetCredit(nil, "pool1")
+	credit, _ := m.store.GetCredit(context.TODO(), "pool1")
 	if credit.Cmp(MustNewCredit("9")) != 0 {
 		t.Errorf("after call 1: expected credit=9, got %s", credit.String())
 	}
@@ -1021,7 +1021,7 @@ func TestAllowN_BatchConsumption_BatchSize5(t *testing.T) {
 			t.Fatalf("expected allowed=true on call %d", i)
 		}
 	}
-	credit, _ = m.store.GetCredit(nil, "pool1")
+	credit, _ = m.store.GetCredit(context.TODO(), "pool1")
 	if credit.Cmp(MustNewCredit("9")) != 0 {
 		t.Errorf("after calls 2-5: expected credit=9, got %s", credit.String())
 	}
@@ -1031,7 +1031,7 @@ func TestAllowN_BatchConsumption_BatchSize5(t *testing.T) {
 	if !allowed {
 		t.Fatal("expected allowed=true on call 6")
 	}
-	credit, _ = m.store.GetCredit(nil, "pool1")
+	credit, _ = m.store.GetCredit(context.TODO(), "pool1")
 	if credit.Cmp(MustNewCredit("8")) != 0 {
 		t.Errorf("after call 6: expected credit=8, got %s", credit.String())
 	}
@@ -1043,7 +1043,7 @@ func TestAllowN_BatchConsumption_BatchSize5(t *testing.T) {
 			t.Fatalf("expected allowed=true on call %d", i)
 		}
 	}
-	credit, _ = m.store.GetCredit(nil, "pool1")
+	credit, _ = m.store.GetCredit(context.TODO(), "pool1")
 	if credit.Cmp(MustNewCredit("8")) != 0 {
 		t.Errorf("after calls 7-10: expected credit=8, got %s", credit.String())
 	}
@@ -1077,7 +1077,7 @@ func TestAllowN_BatchConsumption_MultipleAtOnce(t *testing.T) {
 	if !allowed {
 		t.Fatal("expected allowed=true")
 	}
-	credit, _ := m.store.GetCredit(nil, "pool1")
+	credit, _ := m.store.GetCredit(context.TODO(), "pool1")
 	if credit.Cmp(MustNewCredit("85")) != 0 {
 		t.Errorf("expected credit=85, got %s", credit.String())
 	}
@@ -1162,7 +1162,7 @@ func TestProperty11_BatchConsumptionAccuracy(t *testing.T) {
 			}
 		}
 
-		remaining, err := m.store.GetCredit(nil, "prop11_pool")
+		remaining, err := m.store.GetCredit(context.TODO(), "prop11_pool")
 		if err != nil {
 			return false
 		}
@@ -1227,7 +1227,7 @@ func TestProperty12_CreditConservation(t *testing.T) {
 			}
 		}
 
-		remaining, err := m.store.GetCredit(nil, "prop12_pool")
+		remaining, err := m.store.GetCredit(context.TODO(), "prop12_pool")
 		if err != nil {
 			return false
 		}
@@ -1282,12 +1282,12 @@ func TestProperty13_ResetCreditsAccuracy(t *testing.T) {
 		}
 
 		// Reset
-		if err := m.ResetCredits("prop13_pool"); err != nil {
+		if err = m.ResetCredits("prop13_pool"); err != nil {
 			return false
 		}
 
 		// Verify
-		credits, err := m.GetCredits("prop13_pool")
+		credits, err = m.GetCredits("prop13_pool")
 		if err != nil {
 			return false
 		}
@@ -1420,7 +1420,7 @@ func TestProperty24_SharedCreditPoolConsistency(t *testing.T) {
 			}
 		}
 
-		remaining, err := m.store.GetCredit(nil, "prop24_pool")
+		remaining, err := m.store.GetCredit(context.TODO(), "prop24_pool")
 		if err != nil {
 			return false
 		}
@@ -1502,11 +1502,11 @@ func TestResetCredits_Success(t *testing.T) {
 	m.AllowN("api1", 1, now)
 
 	// Reset
-	if err := m.ResetCredits("pool1"); err != nil {
+	if err = m.ResetCredits("pool1"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	credits, err := m.GetCredits("pool1")
+	credits, err = m.GetCredits("pool1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1553,11 +1553,11 @@ func TestAddCredits_Success(t *testing.T) {
 	m.AllowN("api1", 1, now) // 100 - 10 = 90
 
 	// Add credits
-	if err := m.AddCredits("pool1", MustNewCredit("5")); err != nil {
+	if err = m.AddCredits("pool1", MustNewCredit("5")); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	credits, err := m.GetCredits("pool1")
+	credits, err = m.GetCredits("pool1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1599,11 +1599,11 @@ func TestSetCredits_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := m.SetCredits("pool1", MustNewCredit("42")); err != nil {
+	if err = m.SetCredits("pool1", MustNewCredit("42")); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	credits, err := m.GetCredits("pool1")
+	credits, err = m.GetCredits("pool1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1630,7 +1630,7 @@ func TestSetCredits_PoolNotFound(t *testing.T) {
 
 // --- Property 7: Wait関数のコンテキスト尊重 ---
 
-// TestProperty7_WaitContextRespect verifies that when a context is cancelled or
+// TestProperty7_WaitContextRespect verifies that when a context is canceled or
 // deadline-exceeded, Wait returns an error and does not change counters or credits.
 // **Validates: Requirements 4.3, 4.4**
 func TestProperty7_WaitContextRespect(t *testing.T) {
@@ -1667,12 +1667,12 @@ func TestProperty7_WaitContextRespect(t *testing.T) {
 			m.AllowN("prop7_api", 1, now)
 		}
 
-		// Capture state before Wait with cancelled context
+		// Capture state before Wait with canceled context
 		key := windowKey("prop7_api", time.Minute, now)
-		countBefore, _ := m.store.GetWindowCount(nil, key)
-		creditBefore, _ := m.store.GetCredit(nil, "prop7_pool")
+		countBefore, _ := m.store.GetWindowCount(context.TODO(), key)
+		creditBefore, _ := m.store.GetCredit(context.TODO(), "prop7_pool")
 
-		// Use already-cancelled context
+		// Use already-canceled context
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
@@ -1682,8 +1682,8 @@ func TestProperty7_WaitContextRespect(t *testing.T) {
 		}
 
 		// Verify state unchanged
-		countAfter, _ := m.store.GetWindowCount(nil, key)
-		creditAfter, _ := m.store.GetCredit(nil, "prop7_pool")
+		countAfter, _ := m.store.GetWindowCount(context.TODO(), key)
+		creditAfter, _ := m.store.GetCredit(context.TODO(), "prop7_pool")
 
 		return countBefore == countAfter && creditBefore.Cmp(creditAfter) == 0
 	}
@@ -1718,8 +1718,8 @@ func TestProperty7_WaitDeadlineExceeded(t *testing.T) {
 	m.AllowN("dl_api", 1, now) // exhaust limit
 
 	key := windowKey("dl_api", time.Minute, now)
-	countBefore, _ := m.store.GetWindowCount(nil, key)
-	creditBefore, _ := m.store.GetCredit(nil, "dl_pool")
+	countBefore, _ := m.store.GetWindowCount(context.TODO(), key)
+	creditBefore, _ := m.store.GetCredit(context.TODO(), "dl_pool")
 
 	// Use deadline that's already passed
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
@@ -1730,8 +1730,8 @@ func TestProperty7_WaitDeadlineExceeded(t *testing.T) {
 		t.Fatal("expected error from Wait with expired deadline")
 	}
 
-	countAfter, _ := m.store.GetWindowCount(nil, key)
-	creditAfter, _ := m.store.GetCredit(nil, "dl_pool")
+	countAfter, _ := m.store.GetWindowCount(context.TODO(), key)
+	creditAfter, _ := m.store.GetCredit(context.TODO(), "dl_pool")
 
 	if countBefore != countAfter {
 		t.Errorf("counter changed: before=%d, after=%d", countBefore, countAfter)
@@ -1784,8 +1784,8 @@ func TestProperty8_ReservationCancelConsistency(t *testing.T) {
 
 		// Capture state before Reserve
 		key := windowKey("prop8_api", time.Minute, now)
-		countBefore, _ := m.store.GetWindowCount(nil, key)
-		creditBefore, _ := m.store.GetCredit(nil, "prop8_pool")
+		countBefore, _ := m.store.GetWindowCount(context.TODO(), key)
+		creditBefore, _ := m.store.GetCredit(context.TODO(), "prop8_pool")
 
 		// Reserve
 		n := int64(rng.Intn(3)) + 1
@@ -1799,8 +1799,8 @@ func TestProperty8_ReservationCancelConsistency(t *testing.T) {
 		r.Cancel()
 
 		// Verify state restored
-		countAfter, _ := m.store.GetWindowCount(nil, key)
-		creditAfter, _ := m.store.GetCredit(nil, "prop8_pool")
+		countAfter, _ := m.store.GetWindowCount(context.TODO(), key)
+		creditAfter, _ := m.store.GetCredit(context.TODO(), "prop8_pool")
 
 		return countBefore == countAfter && creditBefore.Cmp(creditAfter) == 0
 	}
@@ -1851,7 +1851,7 @@ func TestProperty9_ConfirmDiffAccuracy(t *testing.T) {
 		}
 
 		// Capture credit after reserve (reservedCost already deducted)
-		creditAfterReserve, _ := m.store.GetCredit(nil, "prop9_pool")
+		creditAfterReserve, _ := m.store.GetCredit(context.TODO(), "prop9_pool")
 
 		// Generate random actual cost (0 to 2*costVal)
 		actualVal := int64(rng.Intn(int(costVal)*2 + 1))
@@ -1860,7 +1860,7 @@ func TestProperty9_ConfirmDiffAccuracy(t *testing.T) {
 
 		_ = r.Confirm(actualCost)
 
-		creditAfterConfirm, _ := m.store.GetCredit(nil, "prop9_pool")
+		creditAfterConfirm, _ := m.store.GetCredit(context.TODO(), "prop9_pool")
 
 		// Expected: creditAfterConfirm = creditAfterReserve - (actualCost - reservedCost)
 		diff := actualCost.Sub(reservedCost)
@@ -1928,9 +1928,9 @@ func TestProperty10_ReservationStateExclusivity(t *testing.T) {
 			if err1 != nil {
 				return false
 			}
-			creditBefore, _ := m.store.GetCredit(nil, "prop10_pool")
+			creditBefore, _ := m.store.GetCredit(context.TODO(), "prop10_pool")
 			r.Cancel() // should be no-op
-			creditAfter, _ := m.store.GetCredit(nil, "prop10_pool")
+			creditAfter, _ := m.store.GetCredit(context.TODO(), "prop10_pool")
 			return creditBefore.Cmp(creditAfter) == 0
 
 		case 2:
@@ -2282,11 +2282,7 @@ func TestProperty15_DefaultValueEquivalence(t *testing.T) {
 		// Check tokens are equal
 		tokensD := mDefaults.Tokens("prop15_api")
 		tokensE := mExplicit.Tokens("prop15_api")
-		if tokensD != tokensE {
-			return false
-		}
-
-		return true
+		return tokensD == tokensE
 	}
 
 	if err := quick.Check(f, cfg); err != nil {

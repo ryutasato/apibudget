@@ -103,9 +103,9 @@ func TestCreditSerializationRoundTrip(t *testing.T) {
 // **Validates: Requirements 1.1**
 func TestNewCredit_ValidInputs(t *testing.T) {
 	tests := []struct {
+		wantF64 float64
 		name    string
 		input   string
-		wantF64 float64
 	}{
 		{"decimal", "1.5", 1.5},
 		{"large value", "1000000000000", 1_000_000_000_000},
@@ -193,9 +193,9 @@ func TestMustNewCredit_ValidInput(t *testing.T) {
 // **Validates: Requirements 1.1**
 func TestNewCreditFromInt(t *testing.T) {
 	tests := []struct {
+		wantF64 float64
 		name    string
 		input   int64
-		wantF64 float64
 	}{
 		{"zero", 0, 0},
 		{"positive", 100, 100},
@@ -266,9 +266,9 @@ func TestCredit_IsNegative(t *testing.T) {
 // **Validates: Requirements 1.3**
 func TestCredit_Float64(t *testing.T) {
 	tests := []struct {
+		wantF64 float64
 		name    string
 		val     Credit
-		wantF64 float64
 	}{
 		{"integer", MustNewCredit("42"), 42.0},
 		{"decimal", MustNewCredit("3.14"), 3.14},

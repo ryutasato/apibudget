@@ -15,8 +15,8 @@ import (
 // Server はHTTP APIサーバー。BudgetManagerをREST APIとして公開する。
 type Server struct {
 	manager      *BudgetManager
-	addr         string
 	reservations map[string]*Reservation
+	addr         string
 	mu           sync.Mutex
 }
 
@@ -83,8 +83,8 @@ type allowRequest struct {
 }
 
 type allowResponse struct {
-	Allowed       bool   `json:"allowed"`
 	NextAvailable string `json:"next_available"`
+	Allowed       bool   `json:"allowed"`
 }
 
 type reserveRequest struct {
@@ -103,12 +103,12 @@ type confirmRequest struct {
 }
 
 type confirmResponse struct {
-	Confirmed bool   `json:"confirmed"`
 	Error     string `json:"error,omitempty"`
+	Confirmed bool   `json:"confirmed"`
 }
 
 type cancelResponse struct {
-	Cancelled bool `json:"cancelled"`
+	Canceled bool `json:"cancelled"`
 }
 
 type waitRequest struct {
@@ -118,8 +118,8 @@ type waitRequest struct {
 }
 
 type waitResponse struct {
-	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
+	Success bool   `json:"success"`
 }
 
 type creditsResponse struct {
@@ -294,7 +294,7 @@ func (s *Server) handleCancel(w http.ResponseWriter, r *http.Request, id string)
 
 	reservation.Cancel()
 
-	writeJSON(w, http.StatusOK, cancelResponse{Cancelled: true})
+	writeJSON(w, http.StatusOK, cancelResponse{Canceled: true})
 }
 
 func (s *Server) handleWait(w http.ResponseWriter, r *http.Request) {
@@ -427,7 +427,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	_ = json.NewEncoder(w).Encode(v)
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {
