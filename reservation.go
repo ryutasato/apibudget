@@ -2,6 +2,7 @@ package apibudget
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 )
@@ -116,11 +117,18 @@ func (r *Reservation) Confirm(actualCost Credit) error {
 	// 予約量より多かった → 追加消費
 	_, err := r.manager.store.DeductCredit(ctx, r.poolName, diff)
 	if err != nil {
+		if !errors.Is(err, ErrInsufficientCredits) {
+			return err
+		}
 		// 残高不足でも消費自体は反映する（事後超過を許容）
 		// 強制的に残高を減算
 		remaining, getErr := r.manager.store.GetCredit(ctx, r.poolName)
-		if getErr == nil {
-			_ = r.manager.store.SetCredit(ctx, r.poolName, remaining.Sub(diff))
+		if getErr != nil {
+			r.manager.logger.Error("failed to get credit for forced deduction", "pool", r.poolName, "error", getErr)
+		} else {
+			if setErr := r.manager.store.SetCredit(ctx, r.poolName, remaining.Sub(diff)); setErr != nil {
+				r.manager.logger.Error("failed to set credit for forced deduction", "pool", r.poolName, "error", setErr)
+			}
 		}
 		return ErrInsufficientCredits
 	}

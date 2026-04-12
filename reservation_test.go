@@ -2,6 +2,7 @@ package apibudget
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 )
@@ -138,6 +139,35 @@ func TestReservation_Confirm_InsufficientCredits(t *testing.T) {
 	}
 	if !r.confirmed {
 		t.Error("expected reservation to be marked confirmed")
+	}
+}
+
+func TestReservation_Confirm_DeductError(t *testing.T) {
+	store := &mockStore{}
+	manager := &BudgetManager{
+		store:  store,
+		logger: newDefaultLogger(LogLevelDebug),
+	}
+
+	reservedCost := MustNewCredit("10")
+	r := &Reservation{
+		manager:      manager,
+		poolName:     "test_pool",
+		reservedCost: reservedCost,
+		ok:           true,
+	}
+
+	actualCost := MustNewCredit("15")
+	expectedErr := errors.New("some store error")
+
+	store.DeductCreditFunc = func(ctx context.Context, poolKey string, amount Credit) (Credit, error) {
+		return Credit{}, expectedErr
+	}
+
+	err := r.Confirm(actualCost)
+
+	if !errors.Is(err, expectedErr) {
+		t.Errorf("expected %v, got %v", expectedErr, err)
 	}
 }
 
