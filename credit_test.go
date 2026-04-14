@@ -213,6 +213,39 @@ func TestNewCreditFromInt(t *testing.T) {
 	}
 }
 
+// TestCredit_Add verifies the behavior of the Add method.
+// **Validates: Requirements 1.3**
+func TestCredit_Add(t *testing.T) {
+	tests := []struct {
+		a    Credit
+		b    Credit
+		want Credit
+		name string
+	}{
+		{MustNewCredit("10.5"), MustNewCredit("20.25"), MustNewCredit("30.75"), "positive + positive"},
+		{MustNewCredit("-5"), MustNewCredit("-10"), MustNewCredit("-15"), "negative + negative"},
+		{MustNewCredit("100"), MustNewCredit("-50"), MustNewCredit("50"), "positive + negative"},
+		{MustNewCredit("-50"), MustNewCredit("100"), MustNewCredit("50"), "negative + positive"},
+		{MustNewCredit("0"), MustNewCredit("0"), MustNewCredit("0"), "zero + zero"},
+		{MustNewCredit("42"), MustNewCredit("0"), MustNewCredit("42"), "value + zero"},
+		{MustNewCredit("0"), MustNewCredit("42"), MustNewCredit("42"), "zero + value"},
+		{MustNewCredit("1/3"), MustNewCredit("1/3"), MustNewCredit("2/3"), "fractions"},
+		{MustNewCredit("1000000000000"), MustNewCredit("2000000000000"), MustNewCredit("3000000000000"), "large values"},
+		{Credit{}, MustNewCredit("5"), MustNewCredit("5"), "zero value struct + value"},
+		{MustNewCredit("5"), Credit{}, MustNewCredit("5"), "value + zero value struct"},
+		{Credit{}, Credit{}, MustNewCredit("0"), "zero value struct + zero value struct"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.a.Add(tt.b)
+			if got.Cmp(tt.want) != 0 {
+				t.Errorf("%s + %s = %s, want %s", tt.a.String(), tt.b.String(), got.String(), tt.want.String())
+			}
+		})
+	}
+}
+
 // TestCredit_IsZero verifies IsZero returns true only for zero values.
 // **Validates: Requirements 1.3**
 func TestCredit_IsZero(t *testing.T) {
