@@ -288,6 +288,38 @@ func TestCredit_Float64(t *testing.T) {
 	}
 }
 
+// TestCredit_Mul verifies the multiplication of Credit values by integers.
+// **Validates: Requirements 1.3**
+func TestCredit_Mul(t *testing.T) {
+	tests := []struct {
+		val  Credit
+		want Credit
+		name string
+		mult int64
+	}{
+		{MustNewCredit("100"), MustNewCredit("200"), "positive by positive", 2},
+		{MustNewCredit("100"), MustNewCredit("0"), "positive by zero", 0},
+		{MustNewCredit("100"), MustNewCredit("-200"), "positive by negative", -2},
+		{MustNewCredit("-50"), MustNewCredit("-150"), "negative by positive", 3},
+		{MustNewCredit("-50"), MustNewCredit("0"), "negative by zero", 0},
+		{MustNewCredit("-50"), MustNewCredit("150"), "negative by negative", -3},
+		{MustNewCredit("0"), MustNewCredit("0"), "zero by positive", 5},
+		{MustNewCredit("1000000000000"), MustNewCredit("2000000000000"), "large by positive", 2},
+		{MustNewCredit("1.5"), MustNewCredit("3"), "fraction by positive", 2},
+		{MustNewCredit("-1.5"), MustNewCredit("-3"), "negative fraction by positive", 2},
+		{MustNewCredit("1.5"), MustNewCredit("-3"), "fraction by negative", -2},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.val.Mul(tt.mult)
+			if got.Cmp(tt.want) != 0 {
+				t.Errorf("Credit(%s).Mul(%d) = %s, want %s", tt.val.String(), tt.mult, got.String(), tt.want.String())
+			}
+		})
+	}
+}
+
 // TestCredit_ArithmeticBoundary verifies arithmetic operations with boundary values.
 // **Validates: Requirements 1.3**
 func TestCredit_ArithmeticBoundary(t *testing.T) {
