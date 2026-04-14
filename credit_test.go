@@ -373,38 +373,38 @@ func TestCredit_ArithmeticBoundary(t *testing.T) {
 // TestCredit_Cmp verifies Cmp returns correct comparison values (-1, 0, 1).
 func TestCredit_Cmp(t *testing.T) {
 	tests := []struct {
-		name string
 		c    Credit
 		c2   Credit
+		name string
 		want int
 	}{
-		{"equal positive integers", MustNewCredit("100"), MustNewCredit("100"), 0},
-		{"equal negative integers", MustNewCredit("-100"), MustNewCredit("-100"), 0},
-		{"equal zeros", MustNewCredit("0"), MustNewCredit("0"), 0},
-		{"zero value struct vs explicit zero", Credit{}, MustNewCredit("0"), 0},
-		{"explicit zero vs zero value struct", MustNewCredit("0"), Credit{}, 0},
-		{"zero value struct vs zero value struct", Credit{}, Credit{}, 0},
+		{MustNewCredit("100"), MustNewCredit("100"), "equal positive integers", 0},
+		{MustNewCredit("-100"), MustNewCredit("-100"), "equal negative integers", 0},
+		{MustNewCredit("0"), MustNewCredit("0"), "equal zeros", 0},
+		{Credit{}, MustNewCredit("0"), "zero value struct vs explicit zero", 0},
+		{MustNewCredit("0"), Credit{}, "explicit zero vs zero value struct", 0},
+		{Credit{}, Credit{}, "zero value struct vs zero value struct", 0},
 
-		{"positive less than larger positive", MustNewCredit("50"), MustNewCredit("100"), -1},
-		{"positive greater than smaller positive", MustNewCredit("100"), MustNewCredit("50"), 1},
+		{MustNewCredit("50"), MustNewCredit("100"), "positive less than larger positive", -1},
+		{MustNewCredit("100"), MustNewCredit("50"), "positive greater than smaller positive", 1},
 
-		{"negative less than zero", MustNewCredit("-1"), MustNewCredit("0"), -1},
-		{"zero greater than negative", MustNewCredit("0"), MustNewCredit("-1"), 1},
+		{MustNewCredit("-1"), MustNewCredit("0"), "negative less than zero", -1},
+		{MustNewCredit("0"), MustNewCredit("-1"), "zero greater than negative", 1},
 
-		{"negative less than positive", MustNewCredit("-50"), MustNewCredit("50"), -1},
-		{"positive greater than negative", MustNewCredit("50"), MustNewCredit("-50"), 1},
+		{MustNewCredit("-50"), MustNewCredit("50"), "negative less than positive", -1},
+		{MustNewCredit("50"), MustNewCredit("-50"), "positive greater than negative", 1},
 
-		{"negative less than smaller negative", MustNewCredit("-100"), MustNewCredit("-50"), -1},
-		{"smaller negative greater than negative", MustNewCredit("-50"), MustNewCredit("-100"), 1},
+		{MustNewCredit("-100"), MustNewCredit("-50"), "negative less than smaller negative", -1},
+		{MustNewCredit("-50"), MustNewCredit("-100"), "smaller negative greater than negative", 1},
 
-		{"fraction vs equal integer", MustNewCredit("4/2"), MustNewCredit("2"), 0},
-		{"integer vs equal fraction", MustNewCredit("2"), MustNewCredit("4/2"), 0},
+		{MustNewCredit("4/2"), MustNewCredit("2"), "fraction vs equal integer", 0},
+		{MustNewCredit("2"), MustNewCredit("4/2"), "integer vs equal fraction", 0},
 
-		{"fraction less than larger fraction", MustNewCredit("1/3"), MustNewCredit("1/2"), -1},
-		{"fraction greater than smaller fraction", MustNewCredit("1/2"), MustNewCredit("1/3"), 1},
+		{MustNewCredit("1/3"), MustNewCredit("1/2"), "fraction less than larger fraction", -1},
+		{MustNewCredit("1/2"), MustNewCredit("1/3"), "fraction greater than smaller fraction", 1},
 
-		{"fractional difference less", MustNewCredit("1/3"), MustNewCredit("0.3333333334"), -1},
-		{"fractional difference greater", MustNewCredit("1/3"), MustNewCredit("0.3333333333"), 1},
+		{MustNewCredit("1/3"), MustNewCredit("0.3333333334"), "fractional difference less", -1},
+		{MustNewCredit("1/3"), MustNewCredit("0.3333333333"), "fractional difference greater", 1},
 	}
 
 	for _, tt := range tests {
