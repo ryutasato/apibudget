@@ -334,6 +334,9 @@ func (m *BudgetManager) AddCredits(poolName string, amount Credit) error {
 		return ErrPoolNotFound
 	}
 	_, err := m.store.AddCredit(context.Background(), poolName, amount)
+	if err != nil {
+		m.logger.Error("failed to add credit", "pool", poolName, "amount", amount.String(), "error", err)
+	}
 	return err
 }
 
