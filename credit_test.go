@@ -369,3 +369,89 @@ func TestCredit_ArithmeticBoundary(t *testing.T) {
 		}
 	})
 }
+
+// TestCredit_Sub verifies that Sub correctly subtracts two Credit values.
+func TestCredit_Sub(t *testing.T) {
+	tests := []struct {
+		name string
+		a    Credit
+		b    Credit
+		want Credit
+	}{
+		{
+			name: "positive - positive",
+			a:    MustNewCredit("100"),
+			b:    MustNewCredit("40"),
+			want: MustNewCredit("60"),
+		},
+		{
+			name: "positive - larger positive",
+			a:    MustNewCredit("40"),
+			b:    MustNewCredit("100"),
+			want: MustNewCredit("-60"),
+		},
+		{
+			name: "positive - negative",
+			a:    MustNewCredit("100"),
+			b:    MustNewCredit("-40"),
+			want: MustNewCredit("140"),
+		},
+		{
+			name: "negative - negative",
+			a:    MustNewCredit("-100"),
+			b:    MustNewCredit("-40"),
+			want: MustNewCredit("-60"),
+		},
+		{
+			name: "negative - positive",
+			a:    MustNewCredit("-100"),
+			b:    MustNewCredit("40"),
+			want: MustNewCredit("-140"),
+		},
+		{
+			name: "zero - positive",
+			a:    MustNewCredit("0"),
+			b:    MustNewCredit("100"),
+			want: MustNewCredit("-100"),
+		},
+		{
+			name: "positive - zero",
+			a:    MustNewCredit("100"),
+			b:    MustNewCredit("0"),
+			want: MustNewCredit("100"),
+		},
+		{
+			name: "zero value struct - positive",
+			a:    Credit{},
+			b:    MustNewCredit("100"),
+			want: MustNewCredit("-100"),
+		},
+		{
+			name: "positive - zero value struct",
+			a:    MustNewCredit("100"),
+			b:    Credit{},
+			want: MustNewCredit("100"),
+		},
+		{
+			name: "rational subtraction",
+			a:    MustNewCredit("1/3"),
+			b:    MustNewCredit("1/6"),
+			want: MustNewCredit("1/6"),
+		},
+		{
+			name: "large values",
+			a:    MustNewCredit("2000000000000"),
+			b:    MustNewCredit("500000000000"),
+			want: MustNewCredit("1500000000000"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.a.Sub(tt.b)
+			if got.Cmp(tt.want) != 0 {
+				t.Errorf("Credit(%s).Sub(Credit(%s)) = %s, want %s", tt.a.String(), tt.b.String(), got.String(), tt.want.String())
+			}
+		})
+	}
+}
