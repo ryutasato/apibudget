@@ -213,6 +213,39 @@ func TestNewCreditFromInt(t *testing.T) {
 	}
 }
 
+// TestCredit_Add verifies the behavior of the Add method.
+// **Validates: Requirements 1.3**
+func TestCredit_Add(t *testing.T) {
+	tests := []struct {
+		a    Credit
+		b    Credit
+		want Credit
+		name string
+	}{
+		{MustNewCredit("10.5"), MustNewCredit("20.25"), MustNewCredit("30.75"), "positive + positive"},
+		{MustNewCredit("-5"), MustNewCredit("-10"), MustNewCredit("-15"), "negative + negative"},
+		{MustNewCredit("100"), MustNewCredit("-50"), MustNewCredit("50"), "positive + negative"},
+		{MustNewCredit("-50"), MustNewCredit("100"), MustNewCredit("50"), "negative + positive"},
+		{MustNewCredit("0"), MustNewCredit("0"), MustNewCredit("0"), "zero + zero"},
+		{MustNewCredit("42"), MustNewCredit("0"), MustNewCredit("42"), "value + zero"},
+		{MustNewCredit("0"), MustNewCredit("42"), MustNewCredit("42"), "zero + value"},
+		{MustNewCredit("1/3"), MustNewCredit("1/3"), MustNewCredit("2/3"), "fractions"},
+		{MustNewCredit("1000000000000"), MustNewCredit("2000000000000"), MustNewCredit("3000000000000"), "large values"},
+		{Credit{}, MustNewCredit("5"), MustNewCredit("5"), "zero value struct + value"},
+		{MustNewCredit("5"), Credit{}, MustNewCredit("5"), "value + zero value struct"},
+		{Credit{}, Credit{}, MustNewCredit("0"), "zero value struct + zero value struct"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.a.Add(tt.b)
+			if got.Cmp(tt.want) != 0 {
+				t.Errorf("%s + %s = %s, want %s", tt.a.String(), tt.b.String(), got.String(), tt.want.String())
+			}
+		})
+	}
+}
+
 // TestCredit_IsZero verifies IsZero returns true only for zero values.
 // **Validates: Requirements 1.3**
 func TestCredit_IsZero(t *testing.T) {
@@ -283,6 +316,38 @@ func TestCredit_Float64(t *testing.T) {
 			diff := got - tt.wantF64
 			if diff < -1e-9 || diff > 1e-9 {
 				t.Errorf("Credit.Float64() = %v, want ≈ %v", got, tt.wantF64)
+			}
+		})
+	}
+}
+
+// TestCredit_Mul verifies the multiplication of Credit values by integers.
+// **Validates: Requirements 1.3**
+func TestCredit_Mul(t *testing.T) {
+	tests := []struct {
+		val  Credit
+		want Credit
+		name string
+		mult int64
+	}{
+		{MustNewCredit("100"), MustNewCredit("200"), "positive by positive", 2},
+		{MustNewCredit("100"), MustNewCredit("0"), "positive by zero", 0},
+		{MustNewCredit("100"), MustNewCredit("-200"), "positive by negative", -2},
+		{MustNewCredit("-50"), MustNewCredit("-150"), "negative by positive", 3},
+		{MustNewCredit("-50"), MustNewCredit("0"), "negative by zero", 0},
+		{MustNewCredit("-50"), MustNewCredit("150"), "negative by negative", -3},
+		{MustNewCredit("0"), MustNewCredit("0"), "zero by positive", 5},
+		{MustNewCredit("1000000000000"), MustNewCredit("2000000000000"), "large by positive", 2},
+		{MustNewCredit("1.5"), MustNewCredit("3"), "fraction by positive", 2},
+		{MustNewCredit("-1.5"), MustNewCredit("-3"), "negative fraction by positive", 2},
+		{MustNewCredit("1.5"), MustNewCredit("-3"), "fraction by negative", -2},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.val.Mul(tt.mult)
+			if got.Cmp(tt.want) != 0 {
+				t.Errorf("Credit(%s).Mul(%d) = %s, want %s", tt.val.String(), tt.mult, got.String(), tt.want.String())
 			}
 		})
 	}
@@ -368,4 +433,90 @@ func TestCredit_ArithmeticBoundary(t *testing.T) {
 			t.Errorf("Credit{} + 100 = %s, want 100", result.String())
 		}
 	})
+}
+
+// TestCredit_Sub verifies that Sub correctly subtracts two Credit values.
+func TestCredit_Sub(t *testing.T) {
+	tests := []struct {
+		a    Credit
+		b    Credit
+		want Credit
+		name string
+	}{
+		{
+			name: "positive - positive",
+			a:    MustNewCredit("100"),
+			b:    MustNewCredit("40"),
+			want: MustNewCredit("60"),
+		},
+		{
+			name: "positive - larger positive",
+			a:    MustNewCredit("40"),
+			b:    MustNewCredit("100"),
+			want: MustNewCredit("-60"),
+		},
+		{
+			name: "positive - negative",
+			a:    MustNewCredit("100"),
+			b:    MustNewCredit("-40"),
+			want: MustNewCredit("140"),
+		},
+		{
+			name: "negative - negative",
+			a:    MustNewCredit("-100"),
+			b:    MustNewCredit("-40"),
+			want: MustNewCredit("-60"),
+		},
+		{
+			name: "negative - positive",
+			a:    MustNewCredit("-100"),
+			b:    MustNewCredit("40"),
+			want: MustNewCredit("-140"),
+		},
+		{
+			name: "zero - positive",
+			a:    MustNewCredit("0"),
+			b:    MustNewCredit("100"),
+			want: MustNewCredit("-100"),
+		},
+		{
+			name: "positive - zero",
+			a:    MustNewCredit("100"),
+			b:    MustNewCredit("0"),
+			want: MustNewCredit("100"),
+		},
+		{
+			name: "zero value struct - positive",
+			a:    Credit{},
+			b:    MustNewCredit("100"),
+			want: MustNewCredit("-100"),
+		},
+		{
+			name: "positive - zero value struct",
+			a:    MustNewCredit("100"),
+			b:    Credit{},
+			want: MustNewCredit("100"),
+		},
+		{
+			name: "rational subtraction",
+			a:    MustNewCredit("1/3"),
+			b:    MustNewCredit("1/6"),
+			want: MustNewCredit("1/6"),
+		},
+		{
+			name: "large values",
+			a:    MustNewCredit("2000000000000"),
+			b:    MustNewCredit("500000000000"),
+			want: MustNewCredit("1500000000000"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.a.Sub(tt.b)
+			if got.Cmp(tt.want) != 0 {
+				t.Errorf("Credit(%s).Sub(Credit(%s)) = %s, want %s", tt.a.String(), tt.b.String(), got.String(), tt.want.String())
+			}
+		})
+	}
 }
