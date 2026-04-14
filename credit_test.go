@@ -373,10 +373,10 @@ func TestCredit_ArithmeticBoundary(t *testing.T) {
 // TestCredit_Sub verifies that Sub correctly subtracts two Credit values.
 func TestCredit_Sub(t *testing.T) {
 	tests := []struct {
-		name string
 		a    Credit
 		b    Credit
 		want Credit
+		name string
 	}{
 		{
 			name: "positive - positive",
