@@ -293,21 +293,21 @@ func TestCredit_Float64(t *testing.T) {
 func TestCredit_Mul(t *testing.T) {
 	tests := []struct {
 		val  Credit
+		want Credit
 		name string
 		mult int64
-		want Credit
 	}{
-		{MustNewCredit("100"), "positive by positive", 2, MustNewCredit("200")},
-		{MustNewCredit("100"), "positive by zero", 0, MustNewCredit("0")},
-		{MustNewCredit("100"), "positive by negative", -2, MustNewCredit("-200")},
-		{MustNewCredit("-50"), "negative by positive", 3, MustNewCredit("-150")},
-		{MustNewCredit("-50"), "negative by zero", 0, MustNewCredit("0")},
-		{MustNewCredit("-50"), "negative by negative", -3, MustNewCredit("150")},
-		{MustNewCredit("0"), "zero by positive", 5, MustNewCredit("0")},
-		{MustNewCredit("1000000000000"), "large by positive", 2, MustNewCredit("2000000000000")},
-		{MustNewCredit("1.5"), "fraction by positive", 2, MustNewCredit("3")},
-		{MustNewCredit("-1.5"), "negative fraction by positive", 2, MustNewCredit("-3")},
-		{MustNewCredit("1.5"), "fraction by negative", -2, MustNewCredit("-3")},
+		{MustNewCredit("100"), MustNewCredit("200"), "positive by positive", 2},
+		{MustNewCredit("100"), MustNewCredit("0"), "positive by zero", 0},
+		{MustNewCredit("100"), MustNewCredit("-200"), "positive by negative", -2},
+		{MustNewCredit("-50"), MustNewCredit("-150"), "negative by positive", 3},
+		{MustNewCredit("-50"), MustNewCredit("0"), "negative by zero", 0},
+		{MustNewCredit("-50"), MustNewCredit("150"), "negative by negative", -3},
+		{MustNewCredit("0"), MustNewCredit("0"), "zero by positive", 5},
+		{MustNewCredit("1000000000000"), MustNewCredit("2000000000000"), "large by positive", 2},
+		{MustNewCredit("1.5"), MustNewCredit("3"), "fraction by positive", 2},
+		{MustNewCredit("-1.5"), MustNewCredit("-3"), "negative fraction by positive", 2},
+		{MustNewCredit("1.5"), MustNewCredit("-3"), "fraction by negative", -2},
 	}
 
 	for _, tt := range tests {
