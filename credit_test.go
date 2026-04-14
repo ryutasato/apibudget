@@ -369,3 +369,49 @@ func TestCredit_ArithmeticBoundary(t *testing.T) {
 		}
 	})
 }
+
+// TestCredit_Cmp verifies Cmp returns correct comparison values (-1, 0, 1).
+func TestCredit_Cmp(t *testing.T) {
+	tests := []struct {
+		name string
+		c    Credit
+		c2   Credit
+		want int
+	}{
+		{"equal positive integers", MustNewCredit("100"), MustNewCredit("100"), 0},
+		{"equal negative integers", MustNewCredit("-100"), MustNewCredit("-100"), 0},
+		{"equal zeros", MustNewCredit("0"), MustNewCredit("0"), 0},
+		{"zero value struct vs explicit zero", Credit{}, MustNewCredit("0"), 0},
+		{"explicit zero vs zero value struct", MustNewCredit("0"), Credit{}, 0},
+		{"zero value struct vs zero value struct", Credit{}, Credit{}, 0},
+
+		{"positive less than larger positive", MustNewCredit("50"), MustNewCredit("100"), -1},
+		{"positive greater than smaller positive", MustNewCredit("100"), MustNewCredit("50"), 1},
+
+		{"negative less than zero", MustNewCredit("-1"), MustNewCredit("0"), -1},
+		{"zero greater than negative", MustNewCredit("0"), MustNewCredit("-1"), 1},
+
+		{"negative less than positive", MustNewCredit("-50"), MustNewCredit("50"), -1},
+		{"positive greater than negative", MustNewCredit("50"), MustNewCredit("-50"), 1},
+
+		{"negative less than smaller negative", MustNewCredit("-100"), MustNewCredit("-50"), -1},
+		{"smaller negative greater than negative", MustNewCredit("-50"), MustNewCredit("-100"), 1},
+
+		{"fraction vs equal integer", MustNewCredit("4/2"), MustNewCredit("2"), 0},
+		{"integer vs equal fraction", MustNewCredit("2"), MustNewCredit("4/2"), 0},
+
+		{"fraction less than larger fraction", MustNewCredit("1/3"), MustNewCredit("1/2"), -1},
+		{"fraction greater than smaller fraction", MustNewCredit("1/2"), MustNewCredit("1/3"), 1},
+
+		{"fractional difference less", MustNewCredit("1/3"), MustNewCredit("0.3333333334"), -1},
+		{"fractional difference greater", MustNewCredit("1/3"), MustNewCredit("0.3333333333"), 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.c.Cmp(tt.c2); got != tt.want {
+				t.Errorf("Credit(%s).Cmp(Credit(%s)) = %v, want %v", tt.c.String(), tt.c2.String(), got, tt.want)
+			}
+		})
+	}
+}
