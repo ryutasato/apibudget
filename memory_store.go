@@ -18,6 +18,7 @@ type memoryStore struct {
 	counters map[string]*counterEntry
 	credits  map[string]*big.Rat
 	mu       sync.Mutex
+	closed   bool
 }
 
 // NewMemoryStore はインメモリストアを生成する。
@@ -33,6 +34,10 @@ func NewMemoryStore() Store {
 func (s *memoryStore) IncrementWindow(_ context.Context, key string, delta int64, window time.Duration) (int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if s.closed {
+		return 0, ErrStoreClosed
+	}
 
 	now := time.Now()
 	entry, ok := s.counters[key]
@@ -52,6 +57,10 @@ func (s *memoryStore) IncrementWindow(_ context.Context, key string, delta int64
 func (s *memoryStore) DecrementWindow(_ context.Context, key string, delta int64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if s.closed {
+		return ErrStoreClosed
+	}
 
 	entry, ok := s.counters[key]
 	if !ok {
@@ -74,6 +83,10 @@ func (s *memoryStore) GetWindowCount(_ context.Context, key string) (int64, erro
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if s.closed {
+		return 0, ErrStoreClosed
+	}
+
 	entry, ok := s.counters[key]
 	if !ok {
 		return 0, nil
@@ -91,6 +104,10 @@ func (s *memoryStore) GetCredit(_ context.Context, poolKey string) (Credit, erro
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if s.closed {
+		return Credit{}, ErrStoreClosed
+	}
+
 	val, ok := s.credits[poolKey]
 	if !ok {
 		return Credit{}, ErrPoolNotFound
@@ -104,6 +121,10 @@ func (s *memoryStore) SetCredit(_ context.Context, poolKey string, value Credit)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if s.closed {
+		return ErrStoreClosed
+	}
+
 	s.credits[poolKey] = new(big.Rat).Set(value.ensureVal())
 	return nil
 }
@@ -112,6 +133,10 @@ func (s *memoryStore) SetCredit(_ context.Context, poolKey string, value Credit)
 func (s *memoryStore) DeductCredit(_ context.Context, poolKey string, amount Credit) (Credit, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if s.closed {
+		return Credit{}, ErrStoreClosed
+	}
 
 	val, ok := s.credits[poolKey]
 	if !ok {
@@ -135,6 +160,10 @@ func (s *memoryStore) AddCredit(_ context.Context, poolKey string, amount Credit
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if s.closed {
+		return Credit{}, ErrStoreClosed
+	}
+
 	val, ok := s.credits[poolKey]
 	if !ok {
 		return Credit{}, ErrPoolNotFound
@@ -147,7 +176,10 @@ func (s *memoryStore) AddCredit(_ context.Context, poolKey string, amount Credit
 	return Credit{val: new(big.Rat).Set(result)}, nil
 }
 
-// Close はインメモリストアではno-op。
+// Close はストアを閉じる。以降の操作はErrStoreClosedを返す。
 func (s *memoryStore) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.closed = true
 	return nil
 }

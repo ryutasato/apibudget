@@ -331,4 +331,57 @@ func TestMemoryStore_Close(t *testing.T) {
 	if err := store.Close(); err != nil {
 		t.Fatalf("Close failed: %v", err)
 	}
+
+	// Calling Close multiple times should be safe and return nil
+	if err := store.Close(); err != nil {
+		t.Fatalf("Second Close failed: %v", err)
+	}
+}
+
+func TestMemoryStore_OperationsAfterClose(t *testing.T) {
+	ctx := context.Background()
+	store := NewMemoryStore()
+
+	// Setup some initial state before closing
+	if err := store.SetCredit(ctx, "pool1", MustNewCredit("100")); err != nil {
+		t.Fatalf("SetCredit failed: %v", err)
+	}
+	if _, err := store.IncrementWindow(ctx, "key1", 1, time.Second); err != nil {
+		t.Fatalf("IncrementWindow failed: %v", err)
+	}
+
+	// Close the store
+	if err := store.Close(); err != nil {
+		t.Fatalf("Close failed: %v", err)
+	}
+
+	// Verify all operations return ErrStoreClosed
+
+	if _, err := store.IncrementWindow(ctx, "key1", 1, time.Second); !errors.Is(err, ErrStoreClosed) {
+		t.Errorf("IncrementWindow after close expected ErrStoreClosed, got %v", err)
+	}
+
+	if err := store.DecrementWindow(ctx, "key1", 1); !errors.Is(err, ErrStoreClosed) {
+		t.Errorf("DecrementWindow after close expected ErrStoreClosed, got %v", err)
+	}
+
+	if _, err := store.GetWindowCount(ctx, "key1"); !errors.Is(err, ErrStoreClosed) {
+		t.Errorf("GetWindowCount after close expected ErrStoreClosed, got %v", err)
+	}
+
+	if _, err := store.GetCredit(ctx, "pool1"); !errors.Is(err, ErrStoreClosed) {
+		t.Errorf("GetCredit after close expected ErrStoreClosed, got %v", err)
+	}
+
+	if err := store.SetCredit(ctx, "pool1", MustNewCredit("200")); !errors.Is(err, ErrStoreClosed) {
+		t.Errorf("SetCredit after close expected ErrStoreClosed, got %v", err)
+	}
+
+	if _, err := store.DeductCredit(ctx, "pool1", MustNewCredit("10")); !errors.Is(err, ErrStoreClosed) {
+		t.Errorf("DeductCredit after close expected ErrStoreClosed, got %v", err)
+	}
+
+	if _, err := store.AddCredit(ctx, "pool1", MustNewCredit("10")); !errors.Is(err, ErrStoreClosed) {
+		t.Errorf("AddCredit after close expected ErrStoreClosed, got %v", err)
+	}
 }

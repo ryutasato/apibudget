@@ -15,4 +15,7 @@ var (
 
 	// ErrPoolNotFound は指定されたクレジットプール名が登録されていないことを示す。
 	ErrPoolNotFound = errors.New("apibudget: credit pool not found")
+
+	// ErrStoreClosed はストアが既に閉じられていることを示す。
+	ErrStoreClosed = errors.New("apibudget: store closed")
 )
