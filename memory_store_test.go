@@ -328,7 +328,25 @@ func TestAddCredit_PoolNotFound(t *testing.T) {
 
 func TestMemoryStore_Close(t *testing.T) {
 	store := NewMemoryStore()
+	memStore, ok := store.(*memoryStore)
+	if !ok {
+		t.Fatalf("expected store to be of type *memoryStore")
+	}
+
+	if memStore.closed {
+		t.Fatalf("expected store to not be closed initially")
+	}
+
 	if err := store.Close(); err != nil {
 		t.Fatalf("Close failed: %v", err)
+	}
+
+	if !memStore.closed {
+		t.Fatalf("expected store to be closed after Close()")
+	}
+
+	// Calling Close multiple times should not error or panic
+	if err := store.Close(); err != nil {
+		t.Fatalf("Subsequent Close failed: %v", err)
 	}
 }

@@ -18,6 +18,7 @@ type memoryStore struct {
 	counters map[string]*counterEntry
 	credits  map[string]*big.Rat
 	mu       sync.Mutex
+	closed   bool
 }
 
 // NewMemoryStore はインメモリストアを生成する。
@@ -147,7 +148,10 @@ func (s *memoryStore) AddCredit(_ context.Context, poolKey string, amount Credit
 	return Credit{val: new(big.Rat).Set(result)}, nil
 }
 
-// Close はインメモリストアではno-op。
+// Close closes the store.
 func (s *memoryStore) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.closed = true
 	return nil
 }
