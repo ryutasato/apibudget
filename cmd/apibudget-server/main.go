@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/ryutasato/apibudget"
 )
@@ -18,6 +19,12 @@ func main() {
 	addr := envOrDefault("APIBUDGET_ADDR", ":8080")
 	storeType := envOrDefault("APIBUDGET_STORE_TYPE", "memory")
 	logLevelStr := envOrDefault("APIBUDGET_LOG_LEVEL", "info")
+
+	// Timeout configurations
+	readHeaderTimeout := envDurationOrDefault("APIBUDGET_READ_HEADER_TIMEOUT", apibudget.DefaultReadHeaderTimeout)
+	readTimeout := envDurationOrDefault("APIBUDGET_READ_TIMEOUT", apibudget.DefaultReadTimeout)
+	writeTimeout := envDurationOrDefault("APIBUDGET_WRITE_TIMEOUT", apibudget.DefaultWriteTimeout)
+	idleTimeout := envDurationOrDefault("APIBUDGET_IDLE_TIMEOUT", apibudget.DefaultIdleTimeout)
 
 	logLevel := parseLogLevel(logLevelStr)
 
@@ -65,6 +72,10 @@ func main() {
 	}
 
 	server := apibudget.NewServer(manager, addr)
+	server.ReadHeaderTimeout = readHeaderTimeout
+	server.ReadTimeout = readTimeout
+	server.WriteTimeout = writeTimeout
+	server.IdleTimeout = idleTimeout
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -88,6 +99,18 @@ func main() {
 func envOrDefault(key, defaultVal string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+	return defaultVal
+}
+
+func envDurationOrDefault(key string, defaultVal time.Duration) time.Duration {
+	if v := os.Getenv(key); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			log.Printf("Warning: invalid duration for %s: %v. Using default: %v", key, err, defaultVal)
+			return defaultVal
+		}
+		return d
 	}
 	return defaultVal
 }
