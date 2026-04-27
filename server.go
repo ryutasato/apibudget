@@ -12,20 +12,40 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	// DefaultReadHeaderTimeout is the default timeout for reading HTTP request headers.
+	DefaultReadHeaderTimeout = 10 * time.Second
+	// DefaultReadTimeout is the default timeout for reading the entire HTTP request.
+	DefaultReadTimeout = 30 * time.Second
+	// DefaultWriteTimeout is the default timeout for writing the HTTP response.
+	DefaultWriteTimeout = 60 * time.Second
+	// DefaultIdleTimeout is the default timeout for keep-alive connections.
+	DefaultIdleTimeout = 120 * time.Second
+)
+
 // Server はHTTP APIサーバー。BudgetManagerをREST APIとして公開する。
 type Server struct {
 	manager      *BudgetManager
 	reservations map[string]*Reservation
 	addr         string
 	mu           sync.Mutex
+
+	ReadHeaderTimeout time.Duration
+	ReadTimeout       time.Duration
+	WriteTimeout      time.Duration
+	IdleTimeout       time.Duration
 }
 
 // NewServer はAPIサーバーを生成する。
 func NewServer(manager *BudgetManager, addr string) *Server {
 	return &Server{
-		manager:      manager,
-		addr:         addr,
-		reservations: make(map[string]*Reservation),
+		manager:           manager,
+		addr:              addr,
+		reservations:      make(map[string]*Reservation),
+		ReadHeaderTimeout: DefaultReadHeaderTimeout,
+		ReadTimeout:       DefaultReadTimeout,
+		WriteTimeout:      DefaultWriteTimeout,
+		IdleTimeout:       DefaultIdleTimeout,
 	}
 }
 
@@ -35,8 +55,12 @@ func (s *Server) Start(ctx context.Context) error {
 	s.registerRoutes(mux)
 
 	srv := &http.Server{
-		Addr:    s.addr,
-		Handler: mux,
+		Addr:              s.addr,
+		Handler:           mux,
+		ReadHeaderTimeout: s.ReadHeaderTimeout,
+		ReadTimeout:       s.ReadTimeout,
+		WriteTimeout:      s.WriteTimeout,
+		IdleTimeout:       s.IdleTimeout,
 	}
 
 	errCh := make(chan error, 1)
