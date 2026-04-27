@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
+	"syscall"
 
 	"github.com/ryutasato/apibudget"
 )
@@ -76,6 +76,36 @@ func main() {
 	server.ReadTimeout = readTimeout
 	server.WriteTimeout = writeTimeout
 	server.IdleTimeout = idleTimeout
+
+	// HTTP timeouts from environment variables
+	if v := os.Getenv("APIBUDGET_READ_HEADER_TIMEOUT"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			server.ReadHeaderTimeout = d
+		} else {
+			log.Printf("invalid APIBUDGET_READ_HEADER_TIMEOUT: %v", err)
+		}
+	}
+	if v := os.Getenv("APIBUDGET_READ_TIMEOUT"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			server.ReadTimeout = d
+		} else {
+			log.Printf("invalid APIBUDGET_READ_TIMEOUT: %v", err)
+		}
+	}
+	if v := os.Getenv("APIBUDGET_WRITE_TIMEOUT"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			server.WriteTimeout = d
+		} else {
+			log.Printf("invalid APIBUDGET_WRITE_TIMEOUT: %v", err)
+		}
+	}
+	if v := os.Getenv("APIBUDGET_IDLE_TIMEOUT"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			server.IdleTimeout = d
+		} else {
+			log.Printf("invalid APIBUDGET_IDLE_TIMEOUT: %v", err)
+		}
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

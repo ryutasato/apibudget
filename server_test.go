@@ -81,6 +81,22 @@ func TestHealthEndpoint_MethodNotAllowed(t *testing.T) {
 	}
 }
 
+func TestServerDefaultTimeouts(t *testing.T) {
+	s := newTestServer(t)
+	if s.ReadHeaderTimeout != 10*time.Second {
+		t.Errorf("expected ReadHeaderTimeout 10s, got %v", s.ReadHeaderTimeout)
+	}
+	if s.ReadTimeout != 30*time.Second {
+		t.Errorf("expected ReadTimeout 30s, got %v", s.ReadTimeout)
+	}
+	if s.WriteTimeout != 60*time.Second {
+		t.Errorf("expected WriteTimeout 60s, got %v", s.WriteTimeout)
+	}
+	if s.IdleTimeout != 120*time.Second {
+		t.Errorf("expected IdleTimeout 120s, got %v", s.IdleTimeout)
+	}
+}
+
 func TestAllowEndpoint(t *testing.T) {
 	s := newTestServer(t)
 	handler := s.Handler()
@@ -106,22 +122,6 @@ func TestAllowEndpoint_MissingAPI(t *testing.T) {
 	rec := doRequest(t, handler, http.MethodPost, "/api/v1/allow", allowRequest{N: 1})
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", rec.Code)
-	}
-}
-
-func TestServerDefaultTimeouts(t *testing.T) {
-	s := newTestServer(t)
-	if s.ReadHeaderTimeout != DefaultReadHeaderTimeout {
-		t.Errorf("expected ReadHeaderTimeout %v, got %v", DefaultReadHeaderTimeout, s.ReadHeaderTimeout)
-	}
-	if s.ReadTimeout != DefaultReadTimeout {
-		t.Errorf("expected ReadTimeout %v, got %v", DefaultReadTimeout, s.ReadTimeout)
-	}
-	if s.WriteTimeout != DefaultWriteTimeout {
-		t.Errorf("expected WriteTimeout %v, got %v", DefaultWriteTimeout, s.WriteTimeout)
-	}
-	if s.IdleTimeout != DefaultIdleTimeout {
-		t.Errorf("expected IdleTimeout %v, got %v", DefaultIdleTimeout, s.IdleTimeout)
 	}
 }
 
