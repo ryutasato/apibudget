@@ -29,14 +29,32 @@ func NewMemoryStore() Store {
 	}
 }
 
+func (s *memoryStore) checkClosedLocked() error {
+	if s.closed {
+		return ErrStoreClosed
+	}
+	return nil
+}
+
+func (s *memoryStore) getCreditLocked(poolKey string) (*big.Rat, error) {
+	if err := s.checkClosedLocked(); err != nil {
+		return nil, err
+	}
+	val, ok := s.credits[poolKey]
+	if !ok {
+		return nil, ErrPoolNotFound
+	}
+	return val, nil
+}
+
 // IncrementWindow はキーのカウンタをdelta分増加し、現在値を返す。
 // エントリが存在しないか期限切れの場合、新規作成（count=0, expires=now+window）してからdeltaを加算する。
 func (s *memoryStore) IncrementWindow(_ context.Context, key string, delta int64, window time.Duration) (int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.closed {
-		return 0, ErrStoreClosed
+	if err := s.checkClosedLocked(); err != nil {
+		return 0, err
 	}
 
 	now := time.Now()
@@ -58,8 +76,8 @@ func (s *memoryStore) DecrementWindow(_ context.Context, key string, delta int64
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.closed {
-		return ErrStoreClosed
+	if err := s.checkClosedLocked(); err != nil {
+		return err
 	}
 
 	entry, ok := s.counters[key]
@@ -83,8 +101,8 @@ func (s *memoryStore) GetWindowCount(_ context.Context, key string) (int64, erro
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.closed {
-		return 0, ErrStoreClosed
+	if err := s.checkClosedLocked(); err != nil {
+		return 0, err
 	}
 
 	entry, ok := s.counters[key]
@@ -104,13 +122,9 @@ func (s *memoryStore) GetCredit(_ context.Context, poolKey string) (Credit, erro
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.closed {
-		return Credit{}, ErrStoreClosed
-	}
-
-	val, ok := s.credits[poolKey]
-	if !ok {
-		return Credit{}, ErrPoolNotFound
+	val, err := s.getCreditLocked(poolKey)
+	if err != nil {
+		return Credit{}, err
 	}
 
 	return Credit{val: new(big.Rat).Set(val)}, nil
@@ -121,8 +135,8 @@ func (s *memoryStore) SetCredit(_ context.Context, poolKey string, value Credit)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.closed {
-		return ErrStoreClosed
+	if err := s.checkClosedLocked(); err != nil {
+		return err
 	}
 
 	s.credits[poolKey] = new(big.Rat).Set(value.ensureVal())
@@ -134,13 +148,9 @@ func (s *memoryStore) DeductCredit(_ context.Context, poolKey string, amount Cre
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.closed {
-		return Credit{}, ErrStoreClosed
-	}
-
-	val, ok := s.credits[poolKey]
-	if !ok {
-		return Credit{}, ErrPoolNotFound
+	val, err := s.getCreditLocked(poolKey)
+	if err != nil {
+		return Credit{}, err
 	}
 
 	amountVal := amount.ensureVal()
@@ -160,13 +170,9 @@ func (s *memoryStore) AddCredit(_ context.Context, poolKey string, amount Credit
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.closed {
-		return Credit{}, ErrStoreClosed
-	}
-
-	val, ok := s.credits[poolKey]
-	if !ok {
-		return Credit{}, ErrPoolNotFound
+	val, err := s.getCreditLocked(poolKey)
+	if err != nil {
+		return Credit{}, err
 	}
 
 	amountVal := amount.ensureVal()
