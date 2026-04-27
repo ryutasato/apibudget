@@ -125,6 +125,22 @@ func TestAllowEndpoint_MissingAPI(t *testing.T) {
 	}
 }
 
+func TestServerDefaultTimeouts(t *testing.T) {
+	s := newTestServer(t)
+	if s.ReadHeaderTimeout != DefaultReadHeaderTimeout {
+		t.Errorf("expected ReadHeaderTimeout %v, got %v", DefaultReadHeaderTimeout, s.ReadHeaderTimeout)
+	}
+	if s.ReadTimeout != DefaultReadTimeout {
+		t.Errorf("expected ReadTimeout %v, got %v", DefaultReadTimeout, s.ReadTimeout)
+	}
+	if s.WriteTimeout != DefaultWriteTimeout {
+		t.Errorf("expected WriteTimeout %v, got %v", DefaultWriteTimeout, s.WriteTimeout)
+	}
+	if s.IdleTimeout != DefaultIdleTimeout {
+		t.Errorf("expected IdleTimeout %v, got %v", DefaultIdleTimeout, s.IdleTimeout)
+	}
+}
+
 func TestDecodeJSONBody_InvalidJSON(t *testing.T) {
 	s := newTestServer(t)
 	handler := s.Handler()

@@ -12,6 +12,17 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	// DefaultReadHeaderTimeout is the default timeout for reading HTTP request headers.
+	DefaultReadHeaderTimeout = 10 * time.Second
+	// DefaultReadTimeout is the default timeout for reading the entire HTTP request.
+	DefaultReadTimeout = 30 * time.Second
+	// DefaultWriteTimeout is the default timeout for writing the HTTP response.
+	DefaultWriteTimeout = 60 * time.Second
+	// DefaultIdleTimeout is the default timeout for keep-alive connections.
+	DefaultIdleTimeout = 120 * time.Second
+)
+
 // Server はHTTP APIサーバー。BudgetManagerをREST APIとして公開する。
 type Server struct {
 	manager      *BudgetManager
@@ -19,7 +30,6 @@ type Server struct {
 	addr         string
 	mu           sync.Mutex
 
-	// Timeouts for the HTTP server
 	ReadHeaderTimeout time.Duration
 	ReadTimeout       time.Duration
 	WriteTimeout      time.Duration
@@ -32,10 +42,10 @@ func NewServer(manager *BudgetManager, addr string) *Server {
 		manager:           manager,
 		addr:              addr,
 		reservations:      make(map[string]*Reservation),
-		ReadHeaderTimeout: 10 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      60 * time.Second,
-		IdleTimeout:       120 * time.Second,
+		ReadHeaderTimeout: DefaultReadHeaderTimeout,
+		ReadTimeout:       DefaultReadTimeout,
+		WriteTimeout:      DefaultWriteTimeout,
+		IdleTimeout:       DefaultIdleTimeout,
 	}
 }
 
