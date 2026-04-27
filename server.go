@@ -18,14 +18,24 @@ type Server struct {
 	reservations map[string]*Reservation
 	addr         string
 	mu           sync.Mutex
+
+	// Timeouts for the HTTP server
+	ReadHeaderTimeout time.Duration
+	ReadTimeout       time.Duration
+	WriteTimeout      time.Duration
+	IdleTimeout       time.Duration
 }
 
 // NewServer はAPIサーバーを生成する。
 func NewServer(manager *BudgetManager, addr string) *Server {
 	return &Server{
-		manager:      manager,
-		addr:         addr,
-		reservations: make(map[string]*Reservation),
+		manager:           manager,
+		addr:              addr,
+		reservations:      make(map[string]*Reservation),
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 }
 
@@ -35,8 +45,12 @@ func (s *Server) Start(ctx context.Context) error {
 	s.registerRoutes(mux)
 
 	srv := &http.Server{
-		Addr:    s.addr,
-		Handler: mux,
+		Addr:              s.addr,
+		Handler:           mux,
+		ReadHeaderTimeout: s.ReadHeaderTimeout,
+		ReadTimeout:       s.ReadTimeout,
+		WriteTimeout:      s.WriteTimeout,
+		IdleTimeout:       s.IdleTimeout,
 	}
 
 	errCh := make(chan error, 1)

@@ -81,6 +81,22 @@ func TestHealthEndpoint_MethodNotAllowed(t *testing.T) {
 	}
 }
 
+func TestServerDefaultTimeouts(t *testing.T) {
+	s := newTestServer(t)
+	if s.ReadHeaderTimeout != 10*time.Second {
+		t.Errorf("expected ReadHeaderTimeout 10s, got %v", s.ReadHeaderTimeout)
+	}
+	if s.ReadTimeout != 30*time.Second {
+		t.Errorf("expected ReadTimeout 30s, got %v", s.ReadTimeout)
+	}
+	if s.WriteTimeout != 60*time.Second {
+		t.Errorf("expected WriteTimeout 60s, got %v", s.WriteTimeout)
+	}
+	if s.IdleTimeout != 120*time.Second {
+		t.Errorf("expected IdleTimeout 120s, got %v", s.IdleTimeout)
+	}
+}
+
 func TestAllowEndpoint(t *testing.T) {
 	s := newTestServer(t)
 	handler := s.Handler()
