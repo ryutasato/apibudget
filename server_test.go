@@ -122,6 +122,29 @@ func TestServerDefaultTimeouts(t *testing.T) {
 	}
 	if s.IdleTimeout != DefaultIdleTimeout {
 		t.Errorf("expected IdleTimeout %v, got %v", DefaultIdleTimeout, s.IdleTimeout)
+  }
+}
+
+func TestDecodeJSONBody_InvalidJSON(t *testing.T) {
+	s := newTestServer(t)
+	handler := s.Handler()
+
+	body := bytes.NewBufferString(`{"api": "test_api", "n": `) // Malformed JSON
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/allow", body)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", rec.Code)
+	}
+
+	var resp errorResponse
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resp.Error != "invalid request body" {
+		t.Errorf("expected error 'invalid request body', got %q", resp.Error)
 	}
 }
 
