@@ -122,7 +122,7 @@ func TestServerDefaultTimeouts(t *testing.T) {
 	}
 	if s.IdleTimeout != DefaultIdleTimeout {
 		t.Errorf("expected IdleTimeout %v, got %v", DefaultIdleTimeout, s.IdleTimeout)
-  }
+    }
 }
 
 func TestDecodeJSONBody_InvalidJSON(t *testing.T) {
